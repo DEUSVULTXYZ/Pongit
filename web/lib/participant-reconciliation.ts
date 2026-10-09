@@ -2,6 +2,7 @@ export type ParticipantPose={
  paddles:[number,number]; halves:[number,number];
  contactBoundary?:boolean;
  contactPaddles?:readonly [number,number];
+ split?:readonly [boolean,boolean];
  balls:{id:number;x:number;y:number;continuity:string;vx?:number}[];
 };
 const clamp=(n:number,a:number,b:number)=>Math.max(a,Math.min(b,n));
@@ -9,8 +10,11 @@ function contacting(pose:ParticipantPose,side:0|1){
  return !!pose.contactBoundary&&!!pose.contactPaddles&&pose.balls.some(b=>
   Math.abs(b.x-(side===0?40:984))<.002&&(side===0?(b.vx??0)<0:(b.vx??0)>0));
 }
-function contactAligned(pose:ParticipantPose):ParticipantPose{
- return {...pose,paddles:pose.paddles.map((y,i)=>contacting(pose,i as 0|1)?pose.contactPaddles![i]:y) as [number,number]};
+function contactDisagrees(pose:ParticipantPose,side:0|1,shown:number){
+ const intersects=(y:number,centre:number)=>Math.abs(y-centre)<=pose.halves[side]+6
+  &&(!pose.split?.[side]||Math.abs(y-centre)>=2);
+ return pose.balls.some(b=>Math.abs(b.x-(side===0?40:984))<.002&&(side===0?(b.vx??0)<0:(b.vx??0)>0)
+  &&intersects(b.y,shown)!==intersects(b.y,pose.contactPaddles![side]));
 }
 type ParticipantSource={state:unknown;chaos?:unknown;clock:bigint;progressionLimit?:bigint;confirmedInputRevision?:number};
 export function participantSourceChanged(previous:ParticipantSource,current:ParticipantSource){
@@ -47,9 +51,9 @@ export class ParticipantReconciliation {
  private stopCorrection=2;
  private localPicture?:{side:0|1;y:number};
  private stoppedAt?:number;
- reset(){this.paddles=[0,0];this.balls.clear();this.ballPictures.clear();this.localDirection=0;this.stopCorrection=2;this.localPicture=undefined;this.stoppedAt=undefined;}
- sample(current:ParticipantPose,previous:ParticipantPose|undefined,elapsedMs:number,local?:{side:0|1;direction:number;speed?:number;motionMs?:number;motion?:readonly {direction:number;ms:number}[]}):ParticipantPose{
-  current=contactAligned(current);if(previous)previous=contactAligned(previous);
+ private contactLocks:[boolean,boolean]=[false,false];
+ reset(){this.paddles=[0,0];this.balls.clear();this.ballPictures.clear();this.localDirection=0;this.stopCorrection=2;this.localPicture=undefined;this.stoppedAt=undefined;this.contactLocks=[false,false];}
+ sample(current:ParticipantPose,previous:ParticipantPose|undefined,elapsedMs:number,local?:{side:0|1;direction:number;speed?:number;motionMs?:number;motion?:readonly {direction:number;ms:number}[];stopConfirmed?:boolean}):ParticipantPose{
   const dt=clamp(elapsedMs,0,50);
   const released=!!local&&local.direction===0&&this.localDirection!==0;
   if(local&&local.direction!==this.localDirection){
@@ -65,7 +69,7 @@ export class ParticipantReconciliation {
      // the old release lock preserved a paddle different from live physics.
      let y=this.localPicture.y;
      for(const part of local.motion)y=clamp(y+part.direction*local.speed*part.ms/1000,current.halves[side],576-current.halves[side]);
-     if(local.direction===0){
+     if(local.direction===0&&local.stopConfirmed!==false){
       // Receipt quantization can still differ slightly from local input time.
       // Spend at most TWO units in total for this stop, never subtract a
       // reconciliation velocity from a held direction or leave a long tail.
@@ -102,12 +106,19 @@ export class ParticipantReconciliation {
     }
    }else this.paddles[side]=settle(this.paddles[side],dt,120);
    this.paddles[side]=clamp(current.paddles[side]+this.paddles[side],current.halves[side],576-current.halves[side])-current.paddles[side];
-   if(contacting(current,side)){
+   const atContact=contacting(current,side);
+   if(!atContact)this.contactLocks[side]=false;
+   else if(contactDisagrees(current,side,current.paddles[side]+this.paddles[side]))this.contactLocks[side]=true;
+   if(this.contactLocks[side]){
     // Edge1529: the ball waited at the impact instant while this paddle moved
     // 5px into its future. A genuine miss then looked like a traversal. Keep
     // the contacting pair on one instant until live physics resolves it.
     // Input transport continues; the other paddle remains immediately live.
-    this.paddles[side]=0;
+    // Edge1534: a ball missing by 40px does not interact with this paddle.
+    // Do not interrupt local motion for that unrelated plane crossing. Align
+    // only when the displayed solid geometry contradicts the contact geometry;
+    // retain that fence until this contact resolves, preventing repeated snaps.
+    this.paddles[side]=current.contactPaddles![side]-current.paddles[side];
    }
   }
   const balls=current.balls.map(ball=>{
@@ -153,6 +164,6 @@ export class ParticipantReconciliation {
   for(const id of this.balls.keys())if(!current.balls.some(b=>b.id===id)){this.balls.delete(id);this.ballPictures.delete(id);}
   const paddles=current.paddles.map((y,i)=>y+this.paddles[i]) as [number,number];
   if(local)this.localPicture={side:local.side,y:paddles[local.side]};
-  return {paddles,halves:current.halves,balls};
+  return {paddles,halves:current.halves,balls,...(current.split?{split:current.split}:{})};
  }
 }

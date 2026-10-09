@@ -8,6 +8,18 @@ import {chaosPaddles} from '../shared/chaos-modifiers';
 import {projectParticipant,projectChaosParticipant} from '../web/lib/participant-projection';
 import {sustainedInputMetrics} from '../scripts/browser-sync-probe';
 
+test('release measurement separates pre-event travel without hiding immediate or later corrections',()=>{
+ const frame=(at:number,y:number)=>({at,integratedAt:at,paintedAt:at+.2,y,side:0,observedAt:0,top:y-48,bottom:y+48,height:96,rally:'1'});
+ const trace={snapshots:[{observedAt:0,rulesVersion:17,controllable:true}],keys:[{at:0,side:0,direction:1}],releases:[{at:12,side:0}],
+  paddles:[frame(0,200),...Array.from({length:10},(_,i)=>frame(12.1+i*16,203.6))]};
+ const normal=sustainedInputMetrics(trace);
+ assert.equal(normal.stopping.maxDrift,0);assert(Math.abs(normal.stoppingIncludingFrameTail.maxDrift!-3.6)<1e-9);
+ for(const index of [1,5]){
+  const bad=structuredClone(trace);bad.paddles[index].y+=5;
+  assert.equal(sustainedInputMetrics(bad).stopping.maxDrift,5,'even the first post-key paint remains checked');
+ }
+});
+
 test('Chaos976 release window ends at the next real input, not an earlier RAF timestamp',()=>{
  const frame=(at:number,paintedAt:number,y:number)=>({at,paintedAt,y,side:0,observedAt:0,top:y-48,bottom:y+48,height:96,rally:'1'});
  const trace={snapshots:[{observedAt:0,rulesVersion:17,controllable:true}],

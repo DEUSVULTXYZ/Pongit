@@ -8,6 +8,36 @@ import {initialChaosEvents} from '../shared/physics-chaos-events';
 import {zeroHash} from 'viem';
 const pose=(left=288,right=288,x=512,y=288):ParticipantPose=>({paddles:[left,right],halves:[48,48],balls:[{id:1,x,y,continuity:'0:0'}]});
 
+test('Edge1534 distant misses do not reset a stopped paddle for either ball',()=>{
+ for(const [live,shown,ballY] of [[327,331.87,235.999925],[228,233.6406,143.99999]])for(const id of [1,2]){
+  const view=new ParticipantReconciliation(),p=pose(shown,288,40.00006,ballY);
+  p.balls[0].id=id;p.balls[0].vx=-192;
+  view.sample(p,undefined,0,{side:0,direction:0,speed:300,motion:[],stopConfirmed:false});
+  p.paddles[0]=live;p.contactBoundary=true;p.contactPaddles=[live,288];
+  const first=view.sample(p,undefined,16,{side:0,direction:0,speed:300,motion:[],stopConfirmed:true});
+  assert(Math.abs(first.paddles[0]-shown)<=2);
+  for(let i=0;i<12;i++)assert.equal(view.sample(p,undefined,16,{side:0,direction:0,speed:300,motion:[]}).paddles[0],first.paddles[0]);
+ }
+});
+
+test('a release spends no correction against an unacknowledged moving prediction',()=>{
+ const view=new ParticipantReconciliation();view.sample(pose(300),undefined,0,{side:0,direction:-1,speed:300,motion:[]});
+ const pending=view.sample(pose(295),undefined,10,{side:0,direction:0,speed:300,motion:[],stopConfirmed:false});
+ assert.equal(pending.paddles[0],300);
+ const confirmed=view.sample(pose(301),undefined,10,{side:0,direction:0,speed:300,motion:[],stopConfirmed:true});
+ assert.equal(confirmed.paddles[0],301,'the two-unit budget remains available for the verified release');
+});
+
+test('a split gap and either simultaneous ball retain their real contact classification',()=>{
+ for(const side of [0,1] as const){
+  const view=new ParticipantReconciliation(),p=pose();p.halves=[56,56];p.split=[true,true];
+  p.contactBoundary=true;p.contactPaddles=[288,288];p.paddles[side]=293;
+  p.balls=[{id:1,x:side?984:40,y:200,vx:side?192:-192,continuity:'r'},
+   {id:2,x:side?984:40,y:288,vx:side?192:-192,continuity:'r'}];
+  assert.equal(view.sample(p,undefined,16).paddles[side],288,'gap must not turn into a solid hit for the second ball');
+ }
+});
+
 test('Edge1529 cannot move either paddle into a ball waiting in its past',()=>{
  for(const side of [0,1] as const)for(const ball of [1,2]){
   const view=new ParticipantReconciliation(),p=pose();

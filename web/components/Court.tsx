@@ -29,6 +29,7 @@ function participantPose(state:State,chaos?:ChaosDecoded['physics']):Participant
  const paddles=chaos?eventPaddles(chaos):null;
  return {paddles:[Number(state.left)/1e6,Number(state.right)/1e6],
   halves:paddles?[Number(paddles.heightA)/2e6+(paddles.splitA?8:0),Number(paddles.heightB)/2e6+(paddles.splitB?8:0)]:[Number(state.halfA)/1e6,Number(state.halfB)/1e6],
+  ...(paddles?{split:[paddles.splitA,paddles.splitB] as const}:{}),
   balls:chaos?chaos.balls.flatMap((b,i)=>b.alive?[{id:i+1,x:Number(b.x)/1e12,y:Number(b.y)/1e12,vx:Number(b.vx),continuity:`${chaos.score.rally}:${b.trailRevision}`}]:[]):
    [{id:1,x:Number(state.x)/1e6,y:Number(state.y)/1e6,vx:Number(state.vx),continuity:`${state.scoreA}:${state.scoreB}`}],
  };
@@ -134,6 +135,7 @@ export function Court({
       let p = current.current;
       if(measureControls)el.dataset.frameAt=String(now);
       const paintedAt=performance.now(),priorPaintAt=localPaintAt;localPaintAt=paintedAt;
+      if(measureControls)el.dataset.integratedAt=String(paintedAt);
       let localControls:readonly LocalIntent[]|undefined;
       // Keyboard intent and ACKs are stored outside React. An unrelated render
       // or scoreboard update must never delay the next animation frame.
@@ -207,6 +209,7 @@ export function Court({
         const responsive=p.rulesVersion===17||p.rulesVersion===18;
         const motionMs=responsive?participantMotionMs(dt,p.controllable,timing.stale,s.finished):undefined;
         participantPicture=reconciliation.sample(predictedPose,before,dt,{side:p.side as 0|1,direction:p.direction,speed:localSpeed,motionMs,
+         stopConfirmed:!p.coherentControls!.some(input=>input.side===p.side&&input.confirmed===false)&&(p.side===0?s.leftDir:s.rightDir)===0,
          motion:responsive&&localControls?localMotion(localControls,priorPaintAt,paintedAt,p.controllable&&!timing.stale&&!s.finished):undefined});
         if(measureControls)window.dispatchEvent(new CustomEvent('pongit:presentation-timing',{detail:{ref:p.matchId,frameAt:now,
          processedUs:String(p.state?.t),displayedUs:String(target),paddleError:participantPicture.paddles.map((y,i)=>y-predictedPose.paddles[i]),

@@ -57,7 +57,19 @@ export function sustainedInputMetrics(data:{paddles?:any[];snapshots:any[];keys?
   if(input.direction===0){
    const prior=[...(data.paddles??[])].reverse().find(p=>p.side===input.side&&paintedAt(p)<=input.at);
    const sample=frames.filter(p=>paintedAt(p)<input.at+250&&p.rally===prior?.rally);
-   if(prior&&sample.length>=7&&sample.every(p=>speed(p)!==undefined))stops.push({at:input.at,drift:Math.max(...sample.map(p=>Math.abs(p.y-prior.y)))});
+   if(prior&&sample.length>=7&&sample.every(p=>speed(p)!==undefined)){
+    const held=changes.slice(0,index).reverse().find(c=>c.side===input.side)?.direction??0;
+    // Account for motion that happened BEFORE the release, between the last
+    // integrated frame and the key event. Keep the old raw measure alongside
+    // it. Never use the first post-release position as a zero-error baseline:
+    // that would hide an immediate rollback or an excessive stop correction.
+    const age=Number.isFinite(prior.integratedAt)?input.at-prior.integratedAt:NaN;
+    const velocity=speed(prior);
+    const releaseY=Number.isFinite(age)&&age>=0&&age<=50&&velocity!==undefined
+     ?Math.max(prior.height/2,Math.min(576-prior.height/2,prior.y+held*velocity*age/1000)):prior.y;
+    stops.push({at:input.at,releaseY,drift:Math.max(...sample.map(p=>Math.abs(p.y-releaseY))),
+     includingFrameTail:Math.max(...sample.map(p=>Math.abs(p.y-prior.y)))});
+   }
    continue;
   }
   if(end-input.at<500){reject('short-intent');continue;}
@@ -83,7 +95,8 @@ export function sustainedInputMetrics(data:{paddles?:any[];snapshots:any[];keys?
  }
  const q=(values:number[],p:number)=>[...values].sort((a,b)=>a-b)[Math.floor((values.length-1)*p)];
  return{heldIncludingContacts:{samples:allRatios.length,p05Ratio:q(allRatios,.05),p95Ratio:q(allRatios,.95),outsideTarget:allRatios.filter(r=>r<.95||r>1.05).length},held:{samples:ratios.length,p05Ratio:q(ratios,.05),p95Ratio:q(ratios,.95),minRatio:ratios.length?Math.min(...ratios):undefined,maxRatio:ratios.length?Math.max(...ratios):undefined,
-  outsideTarget:ratios.filter(r=>r<.95||r>1.05).length,outliers},stopping:{samples:stops.length,p95Drift:q(stops.map(s=>s.drift),.95),maxDrift:stops.length?Math.max(...stops.map(s=>s.drift)):undefined,stops},excluded};
+  outsideTarget:ratios.filter(r=>r<.95||r>1.05).length,outliers},stopping:{samples:stops.length,p95Drift:q(stops.map(s=>s.drift),.95),maxDrift:stops.length?Math.max(...stops.map(s=>s.drift)):undefined,stops},
+  stoppingIncludingFrameTail:{p95Drift:q(stops.map(s=>s.includingFrameTail),.95),maxDrift:stops.length?Math.max(...stops.map(s=>s.includingFrameTail)):undefined},excluded};
 }
 
 /** Test-only instrumentation. Record public court state, never wallet props. */
@@ -145,7 +158,7 @@ export async function installSyncProbe(page:Page){
     const side=x===22?0:1,last=data.paddles.at(-1);
     // Split-paddle sprites are two pieces of one actor in the same paint.
     if(last?.paint===paint&&last.side===side){last.top=Math.min(last.top,y);last.bottom=Math.max(last.bottom,y+h);last.y=(last.top+last.bottom)/2;last.height=last.bottom-last.top;}
-    else if(data.paddles.length<80000)data.paddles.push({at:this.canvas.dataset.frameAt?Number(this.canvas.dataset.frameAt):frameAt??performance.now(),paintedAt:performance.now(),paint,side,y:y+h/2,height:h,top:y,bottom:y+h,
+    else if(data.paddles.length<80000)data.paddles.push({at:this.canvas.dataset.frameAt?Number(this.canvas.dataset.frameAt):frameAt??performance.now(),integratedAt:this.canvas.dataset.integratedAt?Number(this.canvas.dataset.integratedAt):undefined,paintedAt:performance.now(),paint,side,y:y+h/2,height:h,top:y,bottom:y+h,
      rally:this.canvas.dataset.rally,finished:props?.state?.finished,observedAt:observed});
     return;
    }
