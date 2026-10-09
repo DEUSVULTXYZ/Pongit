@@ -16,7 +16,9 @@ export async function browserQualificationBarrier(run:string){
    assert.equal(aborted.deadline,config.deadline);throw Error('Coordinator stopped preparation before admission; no match requested');
   }catch(e){if((e as any).code!=='ENOENT')throw e;}
   let release:any;
-  try{release=JSON.parse(await readFile(resolve(dir,config.humanFirst&&/h[cx]$/.test(run)?'release-human.json':'release.json'),'utf8'));}catch(e){if((e as any).code!=='ENOENT')throw e;}
+  const human=config.humanFirst&&/h[cx]$/.test(run);
+  const releaseFile=human?(config.humanByRun?'release-human-'+run.slice(-2)+'.json':'release-human.json'):'release.json';
+  try{release=JSON.parse(await readFile(resolve(dir,releaseFile),'utf8'));}catch(e){if((e as any).code!=='ENOENT')throw e;}
   if(release){assert.equal(release.deadline,config.deadline);assert.equal(release.readyCount,config.runs.length);assert(release.go===true);
    assert(['NOVA','PULSE','ONYX','VECTOR','DRIFT','ECHO','GLITCH','VIPER'].includes(release.bot));return release;}
   await new Promise(r=>setTimeout(r,250));

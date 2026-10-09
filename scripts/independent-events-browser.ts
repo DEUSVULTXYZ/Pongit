@@ -271,6 +271,8 @@ try{
   await b.goto(saved.roomUrl);await b.getByRole('button',{name:'Accept',exact:true}).click();
   await until(()=>b.getByRole('button',{name:'Members 2',exact:true}).isVisible(),'rival joined');
   report.roomConsent={joinedAt:new Date().toISOString(),offers:[]};
+  if(process.env.PONG_BROWSER_BARRIER)await writeFile(process.env.PONG_BROWSER_BARRIER+'/'+run+'.room-joined.json',
+   JSON.stringify({run,at:report.roomConsent.joinedAt,basis:'Both actual Chaos participants joined; no delayed consent or game clock'}),{flag:'wx'});
   await Promise.all([
    ...[a,b].map(async(p,i)=>{
     // Like ranked matchmaking, room creation can wait for sponsored Monad
