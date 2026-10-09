@@ -93,6 +93,7 @@ test('known paddle-growth start needs an exact rendered boundary and prompt live
   (x:any)=>x.poses.pop(),(x:any)=>x.poses[0].renderedUs='66061000',
   (x:any)=>x.poses[1].renderedUs='66059000',(x:any)=>x.poses[1].sourceUs='0',
   (x:any)=>x.poses[1].ref='10143:other:1:24',(x:any)=>x.poses[1].rally='12',
+  (x:any)=>x.poses.forEach((p:any)=>p.ref='10143:arena:1:25'),
   (x:any)=>x.snapshots.pop(),(x:any)=>x.snapshots[1].at=301,
   (x:any)=>x.snapshots[1].state.left='48000000',(x:any)=>x.paddles[1].y=70,
   (x:any)=>x.snapshots[0].chaos.physics.effects[0].startsAt=67000,

@@ -18,7 +18,7 @@ $engine=& ssh pongit docker inspect --format '{{.Image}}' pongit-arcade-five-eng
 if($LASTEXITCODE -ne 0 -or $engine.Trim() -ne 'sha256:cacaab42f26f7d2e2b5417364c13a7e686e767c0a6ea1172a8808e1fae984934'){throw 'Candidate engine is not deployed'}
 $web=& ssh pongit docker inspect --format '{{.Image}}' pongit-arcade-five-arcade-web-1
 if($LASTEXITCODE -ne 0 -or $web.Trim() -ne 'sha256:3c58df2cd92aff3f9041b6f0e52bd10f1112755c46c8543edbddc227c490af62'){throw 'Candidate web is not deployed'}
-$restore='' 
+$restore=''
 $failures=@()
 try{
  foreach($job in $jobs){
