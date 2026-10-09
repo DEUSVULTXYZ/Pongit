@@ -1,7 +1,7 @@
 """Replace only the RPC scheduler after an idle, backed-up production boundary."""
 import ast,datetime,hashlib,json,pathlib,subprocess,time,urllib.request,yaml
 root=pathlib.Path('/opt/pongit/releases/responsive-20261008-r2')
-output=root/'live/evidence/rpc-cutover-30.json';assert not output.exists()
+output=root/'live/evidence/rpc-cutover-41.json';assert not output.exists()
 build=json.loads((root/'build-receipt41b.json').read_text())
 assert build['passed'] and build['source']=='e31ad5d2069d82c5fbdcc621992016b4d7bf13a1'
 previous='sha256:bb7b02c43617f9f11e6e3033f6e44b3583d4bf308dc52e96a6d0d1008f455a5f'
