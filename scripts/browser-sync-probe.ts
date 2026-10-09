@@ -103,18 +103,22 @@ export function sustainedInputMetrics(data:{paddles?:any[];snapshots:any[];keys?
 export async function installSyncProbe(page:Page){
  await page.addInitScript(()=>{
   const data={poses:[] as any[],frames:[] as any[],snapshots:[] as any[],paddles:[] as any[],waiting:[] as any[],layout:[] as any[],corrections:[] as any[],keys:[] as any[],releases:[] as any[]};
+  // Capture before React's delegated touch handler: its intent microtask can
+  // already paint the stopped paddle before a window bubble listener runs.
+  // A late probe would extrapolate held motion past the real release and
+  // report fictitious drift (observed in the preserved mobile1550 failure).
   window.addEventListener('keydown',e=>{const direction=['ArrowUp','KeyW'].includes(e.code)?-1:['ArrowDown','KeyS'].includes(e.code)?1:0;
    if(direction&&!e.repeat){const s=data.snapshots.at(-1);if(s?.controllable&&s.side>=0)data.keys.push({at:performance.now(),direction,side:s.side});}
-  });
+  },{capture:true});
   window.addEventListener('keyup',e=>{if(['ArrowUp','KeyW','ArrowDown','KeyS'].includes(e.code)){
    const s=data.snapshots.at(-1);if(s?.controllable&&s.side>=0)data.releases.push({at:performance.now(),side:s.side});
-  }});
+  }},{capture:true});
   window.addEventListener('pointerup',e=>{if((e.target as Element)?.closest('button[aria-label="Move up"],button[aria-label="Move down"]')){
    const s=data.snapshots.at(-1);if(s?.controllable&&s.side>=0)data.releases.push({at:performance.now(),side:s.side});
-  }});
+  }},{capture:true});
   window.addEventListener('pointerdown',e=>{const label=(e.target as Element)?.closest('button')?.getAttribute('aria-label');
    if(label==='Move up'||label==='Move down'){const s=data.snapshots.at(-1);if(s?.controllable&&s.side>=0)data.keys.push({at:performance.now(),side:s.side,direction:label==='Move up'?-1:1});}
-  });
+  },{capture:true});
   window.addEventListener('pongit:court-frame',(e:any)=>{if(data.poses.length<40000)data.poses.push(e.detail);});
   window.addEventListener('pongit:presentation-timing',(e:any)=>{if(data.corrections.length<40000)data.corrections.push(e.detail);});
   let waitKey='',layoutKey='',frameAt:number|undefined;

@@ -1,0 +1,104 @@
+{
+  "at": "2026-10-09T12:06:47.351033+00:00",
+  "match1550Original": "FAIL - release drift",
+  "unchangedProduction": "4191674",
+  "actualMultiballFrames": 215,
+  "crossings": 0,
+  "paused": 0,
+  "resync": 0,
+  "before": {
+    "at": "2026-10-09T12:06:08.411Z",
+    "passed": false,
+    "events": [
+      {
+        "type": "pointerdown",
+        "handlerAt": 75.20000004768372,
+        "probeAt": null,
+        "count": 0
+      },
+      {
+        "type": "pointerdown-paint",
+        "at": 78.20000004768372
+      },
+      {
+        "type": "pointerup",
+        "handlerAt": 78.60000014305115,
+        "probeAt": null,
+        "count": 0
+      },
+      {
+        "type": "pointerup-paint",
+        "at": 81.60000014305115
+      },
+      {
+        "type": "keydown",
+        "handlerAt": 84.60000014305115,
+        "probeAt": 78.20000004768372,
+        "count": 1
+      },
+      {
+        "type": "keydown-paint",
+        "at": 87.60000014305115
+      },
+      {
+        "type": "keyup",
+        "handlerAt": 88.10000014305115,
+        "probeAt": 81.60000014305115,
+        "count": 1
+      },
+      {
+        "type": "keyup-paint",
+        "at": 91.10000014305115
+      }
+    ],
+    "scope": "Native browser input ordering only; no game or server"
+  },
+  "after": {
+    "at": "2026-10-09T12:06:22.751Z",
+    "passed": true,
+    "events": [
+      {
+        "type": "pointerdown",
+        "handlerAt": 156.20000004768372,
+        "probeAt": 156.10000014305115,
+        "count": 1
+      },
+      {
+        "type": "pointerdown-paint",
+        "at": 159.20000004768372
+      },
+      {
+        "type": "pointerup",
+        "handlerAt": 159.40000009536743,
+        "probeAt": 159.40000009536743,
+        "count": 1
+      },
+      {
+        "type": "pointerup-paint",
+        "at": 162.40000009536743
+      },
+      {
+        "type": "keydown",
+        "handlerAt": 164.60000014305115,
+        "probeAt": 164.5,
+        "count": 2
+      },
+      {
+        "type": "keydown-paint",
+        "at": 167.60000014305115
+      },
+      {
+        "type": "keyup",
+        "handlerAt": 169.29999995231628,
+        "probeAt": 169.29999995231628,
+        "count": 2
+      },
+      {
+        "type": "keyup-paint",
+        "at": 172.29999995231628
+      }
+    ],
+    "scope": "Native browser input ordering only; no game or server"
+  },
+  "conclusion": "Probe must capture input before React root handler; original game report is not retroactively passed."
+}

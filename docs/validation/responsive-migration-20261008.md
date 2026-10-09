@@ -1803,3 +1803,15 @@ Guarded web61 cutoverPASS11:46:52 after the previous game ended naturally. Sourc
 ## October9 11:53 UTC - Edge1543 FAIL retained; real-hit follow-up ready
 
 Headed Edge1543 naturally7-6 on web61, zero pauses/resyncs/crossings/unconfirmedbounces, stoppingp950.63/max1.5units, heldspeedallpass. RemainsFAIL for a19.294unit remote-paddle jump at71.127s: the bot moved beyond an unresolved genuine hit before its picture was fenced. Full trace/report/video preserved. Product4191674 fences genuine hits from the first contact frame while retaining independent distant misses.1242TS/rootTS/secretchecks pass. Linuxweb62image224a4f65a22d047136b719a20e147ef251ec757b7e67a174f5269d040a5e33c9 built; import87490running, notdeployed. No owned browser active. Backup61 stillfresh; prepared cutover62 retains30min age guard and waits for idle. Duplicateweb61 upload offloadedSHA/mountchecked, allimages/volumes retained; usable79.718beforebuild. Prepared firstprospectivefiveChaos/twoClassic normalseries62, NOTRUN, fixed80minbound, exactimageguards, fail-fast for anygameplayfailure. No automaticjobs enabled.
+
+
+## October9 11:56 UTC - web62 live; prospective natural series started
+
+Guarded web62 cutoverPASS11:55:18; web4191674/image224a4f65a22d047136b719a20e147ef251ec757b7e67a174f5269d040a5e33c9 started11:55:15.602549876Z after naturalidlecanonical69532997/hashd40b84f90c74f66ac4762675473bbbe617913cf1ea365f525ca3571a819c33d4, allsevenidle/human0/pending0. Allservicesresumed, onlyweb changed; backup61 OFFVPS proof fresh. Rollbackweb61 retained, neveroldDBrestore. Sole normalseries62 nowrunning fiveChaos then twoClassic, original80minbound, individualnatural7minbound. Stop at first gameplayFAIL; preserve all earlier1543/1534/1529 failures. No other game/browser/lifecyclehelper. No finalqualificationclaim.
+
+
+## 2026-10-09T12:06:47.351033+00:00 - series62 stopped; touch measurement ordering reproduced
+
+Series62 exitedFAIL12:00:52 after third1550. First1548/1549PASS. Mobile1550 naturally6-7, zero pauses/resync/crossings/fakebounces/jumps;215 actualmultiball frames, maxhold100.2ms. Release gateFAIL2.67p95/3.19max retained. Native browser input-order reproduction proves window bubble probe runs AFTER React-root local stop and its microtask paint, inventing1.6-4.3ms held travel. Capture-phase probe fixes chronology; beforeFAIL/afterPASS and52focused tests retained. Productweb62/4191674 unchanged. No contract/lifecycle changes. Prepared distinctseries63, startsmobile360 then remaining4Chaos/2Classic, same product and bounds. No driver yet.
+
+2026-10-09T12:07:46.207128+00:00: sole headed series63 exec10961 running, original deadline13:27:02.0470572Z, same deployedweb62/4191674. StartsChrome360. No other driver or lifecycle action. Captureprobe52focused/rootTS pass; actual mobile pending.
