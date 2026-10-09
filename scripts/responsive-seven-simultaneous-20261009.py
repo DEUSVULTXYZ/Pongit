@@ -47,7 +47,7 @@ try:
     fixture=None
     while int(time.time()*1000)<deadline:
         assert all(p.poll() is None for _,p in children),'A prepared browser exited'
-        env=os.environ.copy();env['PONG_TOURNAMENT_WINDOW']='read-only-public'
+        env=os.environ.copy();env['PONG_TOURNAMENT_WINDOW']='read-only-public';env['PONG_TOURNAMENT_ARCHETYPE']=nova['agent']
         probe=subprocess.run([node,'node_modules/tsx/dist/cli.mjs','scripts/responsive-tournament-window-20261008.ts'],cwd=root,env=env,text=True,capture_output=True,timeout=40)
         if probe.returncode==0:
             window=json.loads(probe.stdout.strip().splitlines()[-1]);report['lastTournamentWindow']=window;save()

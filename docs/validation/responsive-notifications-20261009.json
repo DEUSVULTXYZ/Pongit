@@ -1,0 +1,273 @@
+{
+  "at": "2026-10-09T00:58:29.207275+00:00",
+  "source": "aa7e0e1523eda8c2df82e2f2d24059c1c9344286",
+  "build": {
+    "source": "aa7e0e1523eda8c2df82e2f2d24059c1c9344286",
+    "parent": "sha256:5c035819242e6a225b1b1f244700441427588669919bab7d6cb7e06c0b504b91",
+    "files": {
+      "relayer/src/agents/pool-server.ts": "de18e40ca3fd408756acecaf4a58aa26df49326326edb443c658ccbd73862fa7",
+      "tests/public-chain-read.test.ts": "e1a90c957fecb70c0dcf0fcea06478652f72efbd0f7f9da90a2459a65ffb4d35",
+      "tests/agent-pool-server.test.ts": "48cad0c6db3fb11dbe2137dd217d3a3dc879a131881b193160a172a238789986"
+    },
+    "startedAt": "2026-10-09T00:53:26.151941+00:00",
+    "diskBefore": 79.92531604094694,
+    "passed": true,
+    "image": "sha256:3cb5ca03d5fd3f58723c3e33c045eb06e6e9b91459df3df3354343e1163a60a9",
+    "finishedAt": "2026-10-09T00:54:34.368008+00:00"
+  },
+  "tests": {
+    "fullTypeScript": 1171,
+    "focusedHTTP": 9,
+    "typecheck": true,
+    "oldSourceRegressionFailed": true
+  },
+  "before": {
+    "duplicateEntryReads": 4,
+    "afterEntryReads": 2,
+    "scope": "Deterministic real HTTP/SSE regression. Production improvement still unmeasured."
+  },
+  "canonical": {
+    "at": "2026-10-09T00:57:19.929Z",
+    "passed": true,
+    "readOnly": true,
+    "block": "69403670",
+    "hash": "0x10be7b2e9bee205e52373ebfe312e2336a1c5edc050f18babb59606282d261aa",
+    "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+    "rules": {
+      "agents": 17,
+      "human": 18
+    },
+    "operator": "0x369158ac444278541322643e46e0d5b45ac21c4c",
+    "operatorMon": "49054.198710418",
+    "delegations": [
+      {
+        "app": "0x264101ca1936cfd1b274f5ceba535e1378597dc4",
+        "role": "agents",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "645"
+      },
+      {
+        "app": "0x077df08fa9ff9bbfcba2a3c6879bcf3b21efd3df",
+        "role": "agents",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "374"
+      },
+      {
+        "app": "0x0dcfdd467f7d3d80194897429e85184f46f43e98",
+        "role": "agents",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "559"
+      },
+      {
+        "app": "0xcc4fbf1df9b4bf61353660c40e8f05c5135c3b23",
+        "role": "agents",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "516"
+      },
+      {
+        "app": "0x776f35918da25f0b594fea72911dde5efc93e48e",
+        "role": "agents",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "591"
+      },
+      {
+        "app": "0x4e9fa437576b1b2b386fe1ec24d26839434effb2",
+        "role": "agents",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "466"
+      },
+      {
+        "app": "0x21a573b3c39265d27ad98f70e8942fd55af54391",
+        "role": "agents",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "537"
+      },
+      {
+        "app": "0x9e4c76aa3f83db0b854e0ae968df38bce29ab123",
+        "role": "agents",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "606"
+      },
+      {
+        "app": "0xC8e978e3c6581eB5454e486Eb247c503fFbc0e3D",
+        "role": "human",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "158"
+      },
+      {
+        "app": "0x58a5F04Bbad06061eab3a7A27C75291d5Fa63084",
+        "role": "human",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "105"
+      },
+      {
+        "app": "0x417236584B76a00A8C19B792fc3896F149b0055e",
+        "role": "human",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "51"
+      }
+    ],
+    "qualification": {
+      "agents": false,
+      "capacity": 0,
+      "tournamentsEnabled": true
+    },
+    "scope": "Canonical continuous-delegation snapshot. Does not prove hosted availability or 24-hour operation."
+  },
+  "nodes": {
+    "at": "2026-10-09T00:57:20.424057+00:00",
+    "passed": true,
+    "canonicalBlock": "69403670",
+    "nodes": [
+      {
+        "app": "0x264101ca1936cfd1b274f5ceba535e1378597dc4",
+        "role": "agents",
+        "at": "2026-10-09T00:57:20.267826+00:00",
+        "node": "https://il2-eu-264101ca1936cfd1.fly.dev",
+        "epoch": "1",
+        "chainId": 4242,
+        "baseBlock": "69173551",
+        "passed": true
+      },
+      {
+        "app": "0x077df08fa9ff9bbfcba2a3c6879bcf3b21efd3df",
+        "role": "agents",
+        "at": "2026-10-09T00:57:20.266136+00:00",
+        "node": "https://il2-eu-077df08fa9ff9bbf.fly.dev",
+        "epoch": "1",
+        "chainId": 4242,
+        "baseBlock": "69173557",
+        "passed": true
+      },
+      {
+        "app": "0x0dcfdd467f7d3d80194897429e85184f46f43e98",
+        "role": "agents",
+        "at": "2026-10-09T00:57:20.247434+00:00",
+        "node": "https://il2-eu-0dcfdd467f7d3d80.fly.dev",
+        "epoch": "1",
+        "chainId": 4242,
+        "baseBlock": "69173562",
+        "passed": true
+      },
+      {
+        "app": "0xcc4fbf1df9b4bf61353660c40e8f05c5135c3b23",
+        "role": "agents",
+        "at": "2026-10-09T00:57:20.283037+00:00",
+        "node": "https://il2-eu-cc4fbf1df9b4bf61.fly.dev",
+        "epoch": "1",
+        "chainId": 4242,
+        "baseBlock": "69173567",
+        "passed": true
+      },
+      {
+        "app": "0x776f35918da25f0b594fea72911dde5efc93e48e",
+        "role": "agents",
+        "at": "2026-10-09T00:57:20.330199+00:00",
+        "node": "https://il2-eu-776f35918da25f0b.fly.dev",
+        "epoch": "1",
+        "chainId": 4242,
+        "baseBlock": "69173573",
+        "passed": true
+      },
+      {
+        "app": "0x4e9fa437576b1b2b386fe1ec24d26839434effb2",
+        "role": "agents",
+        "at": "2026-10-09T00:57:20.315286+00:00",
+        "node": "https://il2-eu-4e9fa437576b1b2b.fly.dev",
+        "epoch": "1",
+        "chainId": 4242,
+        "baseBlock": "69173578",
+        "passed": true
+      },
+      {
+        "app": "0x21a573b3c39265d27ad98f70e8942fd55af54391",
+        "role": "agents",
+        "at": "2026-10-09T00:57:20.345936+00:00",
+        "node": "https://il2-eu-21a573b3c39265d2.fly.dev",
+        "epoch": "1",
+        "chainId": 4242,
+        "baseBlock": "69173583",
+        "passed": true
+      },
+      {
+        "app": "0x9e4c76aa3f83db0b854e0ae968df38bce29ab123",
+        "role": "agents",
+        "at": "2026-10-09T00:57:20.356528+00:00",
+        "node": "https://il2-eu-9e4c76aa3f83db0b.fly.dev",
+        "epoch": "1",
+        "chainId": 4242,
+        "baseBlock": "69173588",
+        "passed": true
+      },
+      {
+        "app": "0xC8e978e3c6581eB5454e486Eb247c503fFbc0e3D",
+        "role": "human",
+        "at": "2026-10-09T00:57:20.381364+00:00",
+        "node": "https://il2-eu-c8e978e3c6581eb5.fly.dev",
+        "epoch": "1",
+        "chainId": 4242,
+        "baseBlock": "69173455",
+        "passed": true
+      },
+      {
+        "app": "0x58a5F04Bbad06061eab3a7A27C75291d5Fa63084",
+        "role": "human",
+        "at": "2026-10-09T00:57:20.399500+00:00",
+        "node": "https://il2-eu-58a5f04bbad06061.fly.dev",
+        "epoch": "1",
+        "chainId": 4242,
+        "baseBlock": "69173461",
+        "passed": true
+      },
+      {
+        "app": "0x417236584B76a00A8C19B792fc3896F149b0055e",
+        "role": "human",
+        "at": "2026-10-09T00:57:20.423840+00:00",
+        "node": "https://il2-eu-417236584b76a00a.fly.dev",
+        "epoch": "1",
+        "chainId": 4242,
+        "baseBlock": "69173467",
+        "passed": true
+      }
+    ],
+    "scope": "Actual matching node identities, not a gameplay or 24-hour proof"
+  },
+  "backup": {
+    "files": 6,
+    "bytes": 79897992,
+    "offVpsAt": "2026-10-09T00:54:09.7171698Z",
+    "manifestSha256": "f9f0c652bf68b79ad2e95d821a975c95c623ec0d69eeeb1e753e0f271b91808e"
+  },
+  "seven11": {
+    "passed": false,
+    "admitted": false,
+    "reason": "Owned pre-admission abort after missing the fresh NOVA window in tournament54. NOVA was eliminated; no game cancelled."
+  },
+  "remaining": [
+    "current reader natural browser series",
+    "actual seven-way capacity and latency",
+    "remaining final acceptance and unchanged 24 hours"
+  ]
+}

@@ -6,7 +6,10 @@ import {validateAgentPoolManifest} from '../shared/agent-pool';
 assert.equal(process.env.PONG_TOURNAMENT_WINDOW,'read-only-public');
 const json=async(path:string)=>{const r=await fetch('https://pongit.xyz/api/agents/'+path,{signal:AbortSignal.timeout(10000)});assert(r.ok);return r.json();};
 const manifest=validateAgentPoolManifest(await json('config'));
-const live=await json('live');const fixture=live.items.find((m:any)=>BigInt(m.tournament??0)>0n);
+const target=process.env.PONG_TOURNAMENT_ARCHETYPE?.toLowerCase();
+assert(!target||/^0x[\da-f]{40}$/.test(target));
+const live=await json('live');const fixture=live.items.find((m:any)=>BigInt(m.tournament??0)>0n
+ &&(!target||[m.a.toLowerCase(),m.b.toLowerCase()].includes(target)));
 if(!fixture)console.log(JSON.stringify({fresh:false,reason:'no-tournament'}));
 else{
  const ref=fixture.ref,detail=await json(`matches/${ref.app}/${ref.epoch}/${ref.id}`);

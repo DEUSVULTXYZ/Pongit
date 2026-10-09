@@ -1390,3 +1390,16 @@ All five Chaos games1239,1240,1241,1242,1244 ended naturally with zero measured 
 Actual admission signer had0.256857342TESTMON. Authorized500TESTMON reserve transferred once through the original operator journal, confirmed69398378/hash543e655fe5aed12b4305ceb548f30a4352b0b9b8e94a3f7a10fecfb648545fe3, fee.002590596, after500.256857342. Fundingworker exited0; never repeat it. Validator a375 had45,521.822MON at69397964. No user funding action needed.
 
 No game/browser/lifecycle/build worker active at this checkpoint. Current public web e58531d/reader57ff565; all contracts/epochs unchanged. Latestbackup39 predates the reserve transfer; refresh later. Next sole bounded actual seven-way trial uses independent public catalogue clients and an actual NOVA tournament, no added lifecycle writer. Automation remainsPAUSED. No final24h started or completed delivery.
+
+
+## October9 00:58 UTC - shared entry reads built, canonical nodes rechecked
+
+Canonical69403670 confirms all11 correct contracts Active epoch1/noexpiry. Independent interlude_session checks confirm11/11 matching applications/epochs/chain4242. Operator49,054.198710418TESTMON. No contract/node redeploy, close or funding request.
+
+Seven11 clients were ready00:44:15, but the detector missed the first fresh NOVA window in tournament54. NOVA then lost that quarter-final. The owned clients were stopped00:51 before their admission barrier; no challenge/PvP match was created, and no tournament was changed. OriginalFAIL retained. Next probe skips unrelated archetypes before expensive observation; same10second fresh-window and actual overlap gates remain. No game/browser driver active. Readonly59-sample RPC observer finished:15-43 queued,0throttles, no failed samples.
+
+Definite reader defect: HTTP and SSE used separate entry caches; notifications repeated config/challenge reads in the background. Candidateaa7e0e1 routes both transports through the same foreground entry cache, without changing canonical checks, cache lifetimes, quotas, grants or nonce ownership. Real HTTP/SSE regression fails old source (4entry reads) and passes candidate (2).9focused/1171fullTS/rootTypeScriptPASS. Readerimage3cb5ca03d5fd3f58723c3e33c045eb06e6e9b91459df3df3354343e1163a60a9 built with bounded512MiB/.5CPU; source hashes verified. Production improvement remains unmeasured.
+
+Backup40 includes the reserve transfer:5DB/runtime6files79897992bytes, SHAverifiedOFFVPS00:54:09,manifestf9f0c652bf68b79ad2e95d821a975c95c623ec0d69eeeb1e753e0f271b91808e. Only6oldbackup36payloads79641704bytes removed remotely after fresh localSHA and all-container mount checks; all bytes remainOFFVPS. Current39/40/manifests/images/volumes preserved. Build68485/backup87600/pull5419/tests5324/typecheck20706/37168 finishedPASS.
+
+Sole readercutover40 exec26036 started00:55:08, original01:07:08 bound, awaiting7idle/pending0. Publicreader remains57ff565 untilPASS; web e58531d unchanged. No lifecycle writer. Naturalseries40 preparedNOTRUN,2Classic then5Chaos, original80minute bound when launched. AutomationPAUSED; no24h started or completed delivery.
