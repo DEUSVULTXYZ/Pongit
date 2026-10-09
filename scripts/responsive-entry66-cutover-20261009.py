@@ -1,7 +1,7 @@
 """Replace only the web image after an idle, backed-up production boundary."""
 import ast,datetime,hashlib,json,pathlib,subprocess,time,urllib.request,yaml
 root=pathlib.Path('/opt/pongit/releases/responsive-20261008-r2')
-output=root/'live/evidence/entry-cutover-65.json';assert not output.exists()
+output=root/'live/evidence/entry-cutover-66.json';assert not output.exists()
 webBuild=json.loads((root/'build-admission-web-66.json').read_text());assert webBuild['passed'] and webBuild['source']=='5b9e6e43d718e62d39340dcbb4289be97efcc60b'
 previousWeb='sha256:a77553468d9ccd77922be179a4f8cce3683071d311866d2fca89aabcaf7da8cc'
 previous='sha256:0cb0b8e44f25f83160074ce36507f621df556ce2d9a584795bd2df9f929b1258'
