@@ -87,7 +87,13 @@ async function init(i:number){
  });});
  if(restore)await context.addInitScript(session=>{for(const [k,v] of Object.entries(session))sessionStorage.setItem(k,String(v));},saved.players[i].session);
  await context.addInitScript(()=>{sessionStorage.setItem('pongit:measure-controls','1');if(location.origin==='https://pongit.xyz')localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'}));});
- await context.exposeBinding('recordCountdown',(_source,digit:string)=>{if(/^[123]$/.test(digit)&&!report.countdown[i].includes(digit))report.countdown[i].push(digit);});
+ await context.exposeBinding('recordCountdown',(source,digit:string)=>{
+  if(/^[123]$/.test(digit)&&!report.countdown[i].includes(digit)){
+   report.countdown[i].push(digit);
+   report.countdownEvents??=[];
+   report.countdownEvents.push({player:i,digit,at:performance.timeOrigin+performance.now(),url:source.page.url()});
+  }
+ });
  await context.addInitScript({content:"addEventListener('DOMContentLoaded',function(){new MutationObserver(function(){var digit=document.querySelector('.match-countdown-digit')?.textContent?.trim();if(digit)window.recordCountdown(digit);}).observe(document.documentElement,{subtree:true,childList:true,characterData:true});});"});
  if(!publicRelease)await context.route(origin+'/**',async route=>{
   const url=new URL(route.request().url());
