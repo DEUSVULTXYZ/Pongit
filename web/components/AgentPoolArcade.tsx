@@ -7,7 +7,8 @@ import {useRouter} from 'next/navigation';
 import type {Address} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 import {preparePoolChallenge} from '../../shared/agent-pool-client';
-import {readChallengeAdmission} from '../../shared/agent-challenge-receipt';
+import {readChallengeEntry} from '../../shared/agent-challenge-receipt';
+import {agentEntryHandoff} from '../lib/agent-entry-handoff';
 import {loadPoolFamily,SESSION_RENEW_MARGIN,type PoolFamilySession} from '../../shared/agent-pool-family';
 import {validateAgentPoolManifest,type AgentPoolManifest,type PoolChallengeView} from '../../shared/agent-pool';
 import type {AgentMatchRef} from '../../shared/agents';
@@ -133,8 +134,11 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   // API snapshot. An optional admission can assign somebody else: validate the
   // player, mode and full reference, then let the arena perform its own checks.
   if(m.challengeAdmission==='atomic-v1'&&operation?.status==='confirmed'&&operation.hash){
-   try{const ref=await readChallengeAdmission(poolBase(),m,operation.hash,s.grant.player,{agent,mode});
-    if(ref&&!document.hidden){enterMatch(ref);return;}
+   try{const entry=await readChallengeEntry(poolBase(),m,operation.hash,s.grant.player,{agent,mode});
+    if(entry&&!document.hidden){
+     if(entry.view)agentEntryHandoff.put(m,entry.view,s.grant.player);
+     enterMatch(entry.ref);return;
+    }
    }catch{/* The saved action is confirmed; resume observation, never resubmit. */}
   }
   waiting.current=true;setRetry(n=>n+1);

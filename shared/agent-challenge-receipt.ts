@@ -1,7 +1,7 @@
 import {decodeEventLog,encodeAbiParameters,keccak256,type Address,type Hex,type PublicClient,type TransactionReceipt} from 'viem';
 import {agentChallengesAbi} from './abi-AgentChallenges';
 import {reusableAgentPoolAbi} from './abi-ReusableAgentPool';
-import type {AgentPoolManifest} from './agent-pool';
+import type {AgentPoolManifest,PoolMatchView} from './agent-pool';
 import type {AgentMatchRef} from './agents';
 
 /** Resolve only this player's accepted challenge. The pool may admit an older
@@ -43,4 +43,34 @@ export async function readChallengeAdmission(client:PublicClient,m:AgentPoolMani
  const ref=challengeRefFromReceipt(m,receipt,player,expected);if(!ref)return null;
  const block=await client.getBlock({blockNumber:receipt.blockNumber});
  return block.hash===receipt.blockHash?ref:null;
+}
+
+/** The same canonical admission can hydrate its destination once. It does not
+ * authorize controls: the player still verifies the fresh lease, code, binding
+ * and session. Old receipts and incomplete/mismatching assignments use the API. */
+export function challengeViewFromReceipt(m:AgentPoolManifest,receipt:TransactionReceipt,player:Address,
+ expected:{agent:Address;mode:0|1}):PoolMatchView|null{
+ const ref=challengeRefFromReceipt(m,receipt,player,expected);if(!ref)return null;
+ const key=keccak256(encodeAbiParameters([{type:'uint256'},{type:'address'},{type:'uint256'},{type:'uint256'}],
+  [BigInt(ref.chainId),ref.app,BigInt(ref.epoch),BigInt(ref.id)]));
+ const assigned=receipt.logs.filter(l=>l.address.toLowerCase()===m.pool.toLowerCase()).flatMap(l=>{
+  try{const e=decodeEventLog({abi:reusableAgentPoolAbi,data:l.data,topics:l.topics});
+   return e.eventName==='Assigned'&&e.args.ref===key?[e.args]:[];
+  }catch{return [];}
+ });
+ if(assigned.length!==1)return null;
+ const a=assigned[0],arena=m.arenas.find(a=>a.app.toLowerCase()===ref.app.toLowerCase());
+ if(a.arena.toLowerCase()!==ref.app.toLowerCase()||a.tournament!==0n||a.lane<1||a.lane>=m.maxMatches||!arena?.node)return null;
+ return{ref,a:player,b:expected.agent,mode:expected.mode,ranked:false,tournament:'0',lane:a.lane,node:arena.node,
+  currentBinding:true,regulationSeconds:300,overtimeSeconds:0,result:null};
+}
+
+export async function readChallengeEntry(client:PublicClient,m:AgentPoolManifest,hash:Hex,player:Address,
+ expected:{agent:Address;mode:0|1},now=Date.now()):Promise<{ref:AgentMatchRef;view:PoolMatchView|null}|null>{
+ if(m.version!==5)return null;
+ const receipt=await client.getTransactionReceipt({hash});if(receipt.transactionHash!==hash)return null;
+ const ref=challengeRefFromReceipt(m,receipt,player,expected);if(!ref)return null;
+ const block=await client.getBlock({blockNumber:receipt.blockNumber});if(block.hash!==receipt.blockHash)return null;
+ const age=now-Number(block.timestamp)*1000;
+ return{ref,view:age>=-5000&&age<=30000?challengeViewFromReceipt(m,receipt,player,expected):null};
 }

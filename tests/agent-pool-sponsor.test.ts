@@ -7,7 +7,7 @@ import {agentCatalogAbi} from '../shared/abi-AgentCatalog';
 import {abi as familyAbi} from '../shared/abi-independent-ArcadeFamily';
 import {familyGrantTypes,type ChainOperation} from '../shared/independent';
 import type {AgentPoolManifest} from '../shared/agent-pool';
-import {admissionPasses,batchPoolChallenge,strictPoolAdmissionEstimate,strictPoolAdmissionEstimates,POOL_ADMISSION_BATCH,createPoolSponsor,PoolSponsorPending,poolOperationId,validatePoolSignedCall,type PoolSessionStorage,type PoolSignedCall} from '../shared/agent-pool-sponsor';
+import {admissionPasses,batchPoolChallenge,bundlePoolAdmissions,strictPoolAdmissionEstimate,strictPoolAdmissionEstimates,POOL_ADMISSION_BATCH,createPoolSponsor,PoolSponsorPending,poolOperationId,validatePoolSignedCall,type PoolSessionStorage,type PoolSignedCall} from '../shared/agent-pool-sponsor';
 import {preparePoolFamily,loadPoolFamily,observePoolFamily,familyExpiresSoon,SESSION_RENEW_MARGIN} from '../shared/agent-pool-family';
 import {poolSponsorRoutes} from '../relayer/src/agents/pool-sponsor';
 
@@ -19,6 +19,25 @@ const request:PoolSignedCall={to:m.challenges,data:encodeFunctionData({abi:agent
 const cancel:PoolSignedCall={to:m.challenges,data:encodeFunctionData({abi:agentChallengesAbi,functionName:'command',args:[addr(20),2,addr(21),1,1n,1n,200n,sig]})};
 function memory(){const values=new Map<string,string>();return{values,getItem:(k:string)=>values.get(k)??null,setItem:(k:string,v:string)=>{values.set(k,v);},removeItem:(k:string)=>{values.delete(k);}} satisfies PoolSessionStorage&{values:Map<string,string>};}
 const missing=()=>Object.assign(Error('unknown operation'),{status:404});
+
+test('internal coalescing keeps four independent intents exact and external nested batches forbidden',()=>{
+ const five={...m,version:5,rulesVersion:17,challengeAdmission:'atomic-v1'} as AgentPoolManifest;
+ const calls=[20,22,23,24].map(player=>({...batchPoolChallenge(five,{to:m.challenges,data:encodeFunctionData({abi:agentChallengesAbi,functionName:'command',args:[addr(player),1,addr(21),1,0n,0n,200n,sig]})}),value:0n}));
+ const bundle=bundlePoolAdmissions(five,calls)!;assert(bundle);assert.equal(bundle.estimates.length,4);
+ const decoded=decodeFunctionData({abi:multicall3Abi,data:bundle.call.data});if(decoded.functionName!=='aggregate3')throw Error();
+ decoded.args[0].forEach((c,i)=>{assert.equal(c.target,POOL_ADMISSION_BATCH);assert.equal(c.callData,calls[i].data);assert.equal(c.allowFailure,false);});
+ bundle.estimates.forEach((e,i)=>{
+  const outer=decodeFunctionData({abi:multicall3Abi,data:e.data});if(outer.functionName!=='aggregate3')throw Error();
+  outer.args[0].forEach((child,j)=>{
+   assert.equal(child.allowFailure,false);const inner=decodeFunctionData({abi:multicall3Abi,data:child.callData});if(inner.functionName!=='aggregate3')throw Error();
+   assert.equal(inner.args[0][0].allowFailure,false);assert.equal(inner.args[0][1].allowFailure,j>=calls.length-i);
+  });
+ });
+ assert.throws(()=>validatePoolSignedCall(five,{to:bundle.call.to,data:bundle.call.data}));
+ for(const bad of [[calls[0]],[...calls,calls[0]],[calls[0],calls[0]],[calls[0],{...calls[1],value:1n}],
+  [calls[0],{...cancel,value:0n}],[calls[0],{...batchPoolChallenge(five,request,2),value:0n}]])assert.equal(bundlePoolAdmissions(five,bad),null);
+ assert.equal(bundlePoolAdmissions({...five,rulesVersion:16},calls),null);
+});
 
 test('atomic admission only permits one signed request followed by optional current-pool admission',()=>{
  const five={...m,version:5,challengeAdmission:'atomic-v1'} as AgentPoolManifest;

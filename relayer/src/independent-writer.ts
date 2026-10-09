@@ -7,6 +7,7 @@ import {prepareSponsoredTransaction} from './sponsor-prepare';
 import {writerIdentity,type ScopedWriter} from '../../shared/scoped-writer';
 import {operatorNeedsFunding,operatorFundingMessage} from '../../shared/operator-funding';
 import {continuousSubmissionGuard} from '../../shared/continuous-delegation';
+import {sponsorBundles,type SponsorDispatch} from './sponsor-bundle';
 export function confirmedContractRevert(error:unknown){
  let cause:any=error;for(let i=0;cause&&i<10;i++,cause=cause.cause)if(['ExecutionRevertedError','ContractFunctionRevertedError'].includes(cause.name))return true;return false;
 }
@@ -44,6 +45,7 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
  if(scope&&!(await db.query('SELECT owner FROM independent_writer_binding WHERE id=1')).rowCount&&Number((await db.query("SELECT count(*) FROM independent_operations WHERE status IN ('queued','pending')")).rows[0].count)>0)throw Error('Unbound pending sponsor queue');
  const binding=await db.query('INSERT INTO independent_writer_binding(id,owner) VALUES(1,$1) ON CONFLICT(id) DO UPDATE SET owner=independent_writer_binding.owner RETURNING owner',[identity.owner]);
  if(binding.rows[0].owner!==identity.owner)throw Error('Sponsor queue belongs to another signer; drain and migrate it explicitly');
+ const bundles=scope?.bundle?await sponsorBundles(db,scope,check):undefined;
  const view=(r:any):ChainOperation=>({id:r.id,status:r.status,hash:r.hash??undefined,error:r.error??undefined});
  let closing=false,running=true;
  const tasks=new Set<Promise<unknown>>();
@@ -97,8 +99,12 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
    // must still be the operator's existing database and advisory-lock domain.
    const unresolved=(await db.query("SELECT id FROM independent_operations WHERE status IN ('queued','pending') ORDER BY created_at LIMIT 200")).rows;
    if(unresolved.length){
-    const records=(await journal.query('SELECT id,status,hash FROM il_lifecycle_jobs WHERE owner=$1 AND id=ANY($2::text[])',[account.address.toLowerCase(),unresolved.map(x=>jobId(x.id))])).rows;
-    for(const j of records)await db.query("UPDATE independent_operations SET status=$2,hash=$3,updated_at=now() WHERE id=$1 AND status IN ('queued','pending') AND (status<>$2 OR hash IS DISTINCT FROM $3)",[j.id.slice(identity.prefix.length),j.status,j.hash]);
+    const groups=bundles?await bundles.unresolved(unresolved.map(x=>x.id)):[];
+    const records=(await journal.query('SELECT id,status,hash FROM il_lifecycle_jobs WHERE owner=$1 AND id=ANY($2::text[])',[account.address.toLowerCase(),[...unresolved.map(x=>x.id),...groups].map(jobId)])).rows;
+    for(const j of records){const id=j.id.slice(identity.prefix.length);
+     if(id.startsWith('bundle:')){const row=await bundles?.resolve(id);if(!row)throw Error('Sponsor bundle policy missing');await bundles!.update(row,j.status,j.hash);}
+     else await db.query("UPDATE independent_operations SET status=$2,hash=$3,updated_at=now() WHERE id=$1 AND status IN ('queued','pending') AND (status<>$2 OR hash IS DISTINCT FROM $3)",[id,j.status,j.hash]);
+    }
    }
    if(!jobs.length){lastError='';lastCode=undefined;}
   }finally{
@@ -116,36 +122,62 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
    const pending=(await journal.query("SELECT * FROM il_lifecycle_jobs WHERE owner=$1 AND status='pending' ORDER BY nonce LIMIT 1",[account.address.toLowerCase()])).rows[0];
    if(pending){
     // Only resend an operation owned by this queue. Other writers retain their journal.
-    const owned=pending.id.startsWith(identity.prefix)?(await db.query('SELECT * FROM independent_operations WHERE id=$1',[pending.id.slice(identity.prefix.length)])).rows[0]:null;
+    const ownedId=pending.id.startsWith(identity.prefix)?pending.id.slice(identity.prefix.length):null;
+    const owned: SponsorDispatch|null=ownedId?.startsWith('bundle:')?await bundles?.resolve(ownedId)??null:
+     ownedId?(await db.query('SELECT * FROM independent_operations WHERE id=$1',[ownedId])).rows[0]:null;
     if(owned){
      if(keccak256(pending.raw)!==pending.hash)throw Error('Operator journal hash mismatch');
      if((await recoverTransactionAddress({serializedTransaction:pending.raw})).toLowerCase()!==identity.owner)throw Error('Operator journal signer mismatch');
      const raw=parseTransaction(pending.raw);if(raw.chainId!==10143||raw.nonce!==Number(pending.nonce))throw Error('Operator journal identity mismatch');
      if(raw.to?.toLowerCase()!==owned.target||raw.data!==owned.data||(raw.value??0n)!==BigInt(owned.value))throw Error('Operator queue identity mismatch');
-     await check(owned.target,owned.data,BigInt(owned.value));
+     if(!owned.members)await check(owned.target,owned.data,BigInt(owned.value));
      await base.sendRawTransaction({serializedTransaction:pending.raw});
      lastError='';lastCode=undefined;
     }
     return;
    }
-   const row=(await db.query("SELECT * FROM independent_operations WHERE status='queued' ORDER BY priority,created_at LIMIT 1")).rows[0];if(!row)return;
-   await check(row.target,row.data,BigInt(row.value));
+   let row: SponsorDispatch|undefined=await bundles?.next()??undefined;
+   if(!row){
+    const rows=(await db.query(`SELECT * FROM independent_operations WHERE status='queued' ORDER BY priority,created_at LIMIT ${bundles?4:1}`)).rows;
+    if(!rows.length)return;
+    row=rows.length>1&&bundles?await bundles.create(rows)??rows[0]:rows[0];
+   }
+   if(!row)return;
+   // A crash can leave an immutable group queued after its journal committed.
+   // Reconcile that exact job instead of preparing any second transaction.
+   if(row.members){
+    const previous=(await journal.query('SELECT id,status,hash FROM il_lifecycle_jobs WHERE id=$1 AND owner=$2',[jobId(row.id),identity.owner])).rows[0];
+    if(previous){await bundles!.update(row,previous.status,previous.hash);return;}
+   }else await check(row.target,row.data,BigInt(row.value));
    let request:Awaited<ReturnType<typeof prepareSponsoredTransaction>>;
-   try{request=await prepareSponsoredTransaction(base,account.address,{to:row.target as Address,data:row.data as Hex,value:BigInt(row.value)},scope?.strictEstimate?.(row.target,row.data,BigInt(row.value)));}catch(e){
+   const prepare=(r:SponsorDispatch)=>prepareSponsoredTransaction(base,account.address,{to:r.target,data:r.data,value:BigInt(r.value)},
+    r.estimates??scope?.strictEstimate?.(r.target,r.data,BigInt(r.value)));
+   try{
+    try{request=await prepare(row);}catch(error){
+     if(!row.members||!confirmedContractRevert(error))throw error;
+     // No signature/journal exists for this group. A revoked/expired member
+     // must not starve the queue: dissolve it and retry the oldest intent alone.
+     const first=row.members[0];await bundles!.discardUnsigned(row);
+     row=(await db.query('SELECT * FROM independent_operations WHERE id=$1',[first])).rows[0];
+     if(!row)throw Error('Sponsor operation disappeared');await check(row.target,row.data,BigInt(row.value));
+     request=await prepare(row);
+    }
+   }catch(e){
     // RPC availability does not prove invalid execution. Only a decoded contract revert
     // may retire an unsigned operation. Signed operations never take this branch.
     const reverted=confirmedContractRevert(e);
-    if(reverted)await db.query("UPDATE independent_operations SET status='failed',error=$2,updated_at=now() WHERE id=$1 AND status='queued'",[row.id,'The action is no longer valid. Refresh its contract state.']);
+    if(reverted&&row&&!row.members)await db.query("UPDATE independent_operations SET status='failed',error=$2,updated_at=now() WHERE id=$1 AND status='queued'",[row.id,'The action is no longer valid. Refresh its contract state.']);
     throw e;
    }
    const nonce=request.nonce;
-   await check(row.target,row.data,BigInt(row.value));
+   if(row.members)await bundles!.resolve(row.id);else await check(row.target,row.data,BigInt(row.value));
    // The client chain was verified at startup and preparation pins EIP-1559
    // chainId 10143. Local signing needs no second, hidden eth_chainId roundtrip.
    if(request.chainId!==10143||request.type!=='eip1559')throw Error('Unexpected sponsor transaction chain or type');
    const raw=await account.signTransaction(request),hash=keccak256(raw);
    await journal.query("INSERT INTO il_lifecycle_jobs(id,app,owner,nonce,raw,hash,status) VALUES($1,$2,$3,$4,$5,$6,'pending')",[jobId(row.id),row.target,account.address.toLowerCase(),nonce,raw,hash]);
-   await db.query("UPDATE independent_operations SET status='pending',hash=$2,updated_at=now() WHERE id=$1",[row.id,hash]);
+   if(row.members)await bundles!.update(row,'pending',hash);
+   else await db.query("UPDATE independent_operations SET status='pending',hash=$2,updated_at=now() WHERE id=$1",[row.id,hash]);
    await base.sendRawTransaction({serializedTransaction:raw});lastError='';lastCode=undefined;
    // A fast inclusion need not wait for the next receipt interval. A missing
    // receipt remains pending and is observed by the existing bounded pump.

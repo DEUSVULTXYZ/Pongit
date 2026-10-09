@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {encodeAbiParameters,encodeEventTopics,keccak256,zeroHash,type Address,type Hex,type PublicClient,type TransactionReceipt} from 'viem';
 import {agentChallengesAbi} from '../shared/abi-AgentChallenges';
 import {reusableAgentPoolAbi} from '../shared/abi-ReusableAgentPool';
-import {challengeRefFromReceipt,readChallengeAdmission} from '../shared/agent-challenge-receipt';
+import {challengeRefFromReceipt,readChallengeAdmission,challengeViewFromReceipt,readChallengeEntry} from '../shared/agent-challenge-receipt';
+import {createAgentEntryHandoff} from '../shared/agent-entry-handoff';
 import type {AgentPoolManifest} from '../shared/agent-pool';
 
 const addr=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
@@ -56,4 +57,42 @@ test('receipt shortcut verifies its canonical block and does not guess after a l
  const missing={...client,getTransactionReceipt:async()=>{throw Error('lost RPC response');}} as PublicClient;
  await assert.rejects(readChallengeAdmission(missing,m,hash,player,expected),/lost RPC response/);
  assert.equal(await readChallengeAdmission({...client,getTransactionReceipt:async()=>({...receipt(),transactionHash:zeroHash})} as PublicClient,m,hash,player,expected),null);
+});
+
+const hydrated={...m,maxMatches:5,arenas:[{app:addr(3),node:'https://arena.example',runtimeHash:zeroHash}]} as AgentPoolManifest;
+function assigned(lane=1,emitter=m.pool,key=ref){return{address:emitter,data:encodeAbiParameters([{type:'uint8'},{type:'uint8'}],[0,lane]),
+ topics:encodeEventTopics({abi:reusableAgentPoolAbi,eventName:'Assigned',args:{ref:key,arena:addr(3),tournament:0n}})};}
+const entryReceipt=()=>receipt([changed(),admission(),assigned()]);
+test('receipt hydration needs an exact friendly assignment and never guesses its lane or node',()=>{
+ const value=challengeViewFromReceipt(hydrated,entryReceipt(),player,expected)!;
+ assert.equal(value.lane,1);assert.equal(value.mode,1);assert.equal(value.a,player);assert.equal(value.b,agent);
+ assert.equal(value.result,null);assert.equal(value.node,'https://arena.example');assert.equal(value.ranked,false);
+ for(const logs of [[changed(),admission()],[changed(),admission(),assigned(),assigned()],
+  [changed(),admission(),assigned(0)],[changed(),admission(),assigned(5)],
+  [changed(),admission(),assigned(1,addr(99))],[changed(),admission(),assigned(1,m.pool,zeroHash)]])
+  assert.equal(challengeViewFromReceipt(hydrated,receipt(logs),player,expected),null);
+ assert.equal(challengeViewFromReceipt(m,entryReceipt(),player,expected),null);
+});
+test('old or noncanonical receipt cannot hydrate a new court; no extra RPC round is introduced',async()=>{
+ let timestamp=100n,canonical=blockHash,reads=0;
+ const client={getTransactionReceipt:async()=>entryReceipt(),getBlock:async()=>{reads++;return{hash:canonical,timestamp};}} as unknown as PublicClient;
+ assert.equal((await readChallengeEntry(client,hydrated,hash,player,expected,110000))?.view?.lane,1);assert.equal(reads,1);
+ timestamp=79n;const old=await readChallengeEntry(client,hydrated,hash,player,expected,110000);
+ assert.equal(old?.ref.id,'239');assert.equal(old?.view,null,'Old navigation still resolves through the ordinary API');
+ canonical=zeroHash;assert.equal(await readChallengeEntry(client,hydrated,hash,player,expected,110000),null);
+});
+test('entry handoff is one-use, participant/ref scoped, immutable and short lived; F5 falls back',()=>{
+ let now=100;const handoff=createAgentEntryHandoff(()=>now),view=challengeViewFromReceipt(hydrated,entryReceipt(),player,expected)!;
+ assert.equal(handoff.take(view.ref,player),null);
+ handoff.put(hydrated,view,player);const original=view.node;view.node='https://tampered.example';
+ assert.equal(handoff.take(view.ref,player)?.view.node,original);assert.equal(handoff.take(view.ref,player),null);view.node=original;
+ for(const other of [{...view.ref,chainId:1},{...view.ref,app:addr(9)},{...view.ref,epoch:'13'},{...view.ref,id:'240'}]){
+  handoff.put(hydrated,view,player);assert.equal(handoff.take(other as typeof view.ref,player),null);assert.equal(handoff.take(view.ref,player),null);
+ }
+ handoff.put(hydrated,view,player);assert.equal(handoff.take(view.ref,addr(8)),null);
+ handoff.put(hydrated,view,player);now+=10001;assert.equal(handoff.take(view.ref,player),null);
+ handoff.put(hydrated,view,player);assert.equal(createAgentEntryHandoff(()=>now).take(view.ref,player),null);
+ for(const bad of [{...view,ranked:true},{...view,tournament:'1'},{...view,currentBinding:false},{...view,node:null}]){
+  handoff.put(hydrated,bad,player);assert.equal(handoff.take(view.ref,player),null);
+ }
 });

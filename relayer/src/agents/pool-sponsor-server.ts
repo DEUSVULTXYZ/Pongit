@@ -12,9 +12,10 @@ import {AgentPoolReader} from './pool-read';
 import {poolSponsorRoutes} from './pool-sponsor';
 import {startPoolReadService} from './pool-server';
 import {agentMetrics} from './metrics';
-import {validatePoolSignedCall,strictPoolAdmissionEstimates,POOL_ADMISSION_BATCH,POOL_ADMISSION_BATCH_HASH} from '../../../shared/agent-pool-sponsor';
+import {validatePoolSignedCall,strictPoolAdmissionEstimates,bundlePoolAdmissions,POOL_ADMISSION_BATCH,POOL_ADMISSION_BATCH_HASH} from '../../../shared/agent-pool-sponsor';
 import {validateAgentSponsorRuntime} from '../../../shared/agent-sponsor-runtime';
 import {reusableAgentPoolAbi} from '../../../shared/abi-ReusableAgentPool';
+import type {SponsoredCall} from '../../../shared/scoped-writer';
 
 assert.equal(process.getuid?.(), 1000);
 const humans = (process.env.PONG_HUMAN_APPS ?? '').split(',').filter(Boolean); assert(humans.length);
@@ -37,6 +38,7 @@ const scope=manifest.version===5?{
  keyFile:process.env.PONG_AGENT_SPONSOR_KEY_FILE!,address:process.env.PONG_AGENT_SPONSOR_ADDRESS! as Address,
  allowCall:(to:Address,data:`0x${string}`,value:bigint)=>{assert.equal(value,0n);validatePoolSignedCall(manifest,{to,data});},
  strictEstimate:(to:Address,data:`0x${string}`,value:bigint)=>{assert.equal(value,0n);return strictPoolAdmissionEstimates(manifest,{to,data}).map(call=>({...call,value}));},
+ bundle:(calls:readonly SponsoredCall[])=>bundlePoolAdmissions(manifest,calls),
 }:undefined;
 const writer = await independentWriter(db, base,journal,scope,{eager:manifest.version===5});
 const service = await startPoolReadService(reader, {host: process.env.HOST ?? '0.0.0.0', port: 4102, public: exposure.public,

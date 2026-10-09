@@ -27,6 +27,7 @@ import {Court,type CourtPlayback} from './Court';
 import {AgentScoreboard} from './AgentScoreboard';
 import {ChaosEffectsHud} from './ChaosEffectsHud';
 import {poolBase,poolBrowserSponsor,finishPoolSponsor} from '../lib/agent-pool';
+import {agentEntryHandoff} from '../lib/agent-entry-handoff';
 import {connect,rememberedAccount} from '../lib/wallet';
 import {arcadeAudio} from '../lib/audio';
 import {ArcadeAmbience} from './ArcadeAmbience';
@@ -115,7 +116,8 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
    try{
     if(document.hidden){wasHidden=true;delay=2000;return;}
     if(!config){
-     const [loaded,value]=await Promise.all([get<AgentPoolManifest>('/config'),get<PoolMatchView>(matchPath)]);if(cancelled)return;
+     const handoff=agentEntryHandoff.take(reference,rememberedAccount()?.address);
+     const [loaded,value]=handoff?[handoff.config,handoff.view]:await Promise.all([get<AgentPoolManifest>('/config'),get<PoolMatchView>(matchPath)]);if(cancelled)return;
      // Admission gates do not revoke an existing match. Keep its verified
      // observer/player and published result available while new games pause.
      acceptView(value);config=loaded;manifest.current=config;

@@ -5,6 +5,7 @@ import {agentChallengesAbi} from './abi-AgentChallenges';
 import type {AgentPoolManifest} from './agent-pool';
 import type {ChainOperation} from './independent';
 import {reusableAgentPoolAbi} from './abi-ReusableAgentPool';
+import type {SponsoredCall,SponsoredBundle} from './scoped-writer';
 
 export const POOL_ADMISSION_BATCH='0xcA11bde05977b3631167028862bE2a173976CA11' as const;
 // Observed deployed runtime, independently compared before a sponsor starts.
@@ -85,6 +86,28 @@ export function strictPoolAdmissionEstimates(m:AgentPoolManifest,call:PoolSigned
  const calls=decoded.args[0];
  return Array.from({length:calls.length-1},(_,i)=>({to:call.to,data:encodeFunctionData({abi:multicall3Abi,functionName:'aggregate3',
   args:[calls.map((c,index)=>({...c,allowFailure:index>calls.length-1-i}))]})}));
+}
+
+/** Coalesce at most four already durable current-queue admissions. Each inner
+ * call retains its exact signed bytes and its original Multicall3 msg.sender.
+ * Unrelated actions, duplicate players and legacy scans are never grouped.
+ * The outer batch is internal only: validatePoolSignedCall still rejects it. */
+export function bundlePoolAdmissions(m:AgentPoolManifest,intents:readonly SponsoredCall[]):SponsoredBundle|null{
+ if(m.version!==5||m.rulesVersion!==17||intents.length<2||intents.length>4)return null;
+ const players=new Set<string>();
+ for(const intent of intents){
+  if(intent.value!==0n||intent.to.toLowerCase()!==POOL_ADMISSION_BATCH.toLowerCase())return null;
+  validatePoolSignedCall(m,{to:intent.to,data:intent.data});
+  const decoded=decodeFunctionData({abi:multicall3Abi,data:intent.data});
+  if(decoded.functionName!=='aggregate3'||decoded.args[0].length!==2)return null;
+  const request=decodeFunctionData({abi:agentChallengesAbi,data:decoded.args[0][0].callData});
+  if(request.functionName!=='command'||request.args[1]!==1)return null;
+  const player=request.args[0].toLowerCase();if(players.has(player))return null;players.add(player);
+ }
+ const wrap=(calls:readonly PoolSignedCall[]):SponsoredCall=>({to:POOL_ADMISSION_BATCH,value:0n,
+  data:encodeFunctionData({abi:multicall3Abi,functionName:'aggregate3',args:[calls.map(c=>({target:c.to,allowFailure:false,callData:c.data}))]})});
+ return{call:wrap(intents),estimates:Array.from({length:intents.length},(_,i)=>wrap(intents.map((call,j)=>
+  j<intents.length-i?strictPoolAdmissionEstimate(m,{to:call.to,data:call.data})!:call)))};
 }
 
 export class PoolSponsorPending extends Error {
