@@ -1827,3 +1827,11 @@ Series62 exitedFAIL12:00:52 after third1550. First1548/1549PASS. Mobile1550 natu
 
 
 2026-10-09T12:19:27.641887+00:00 - web63 built/imported68b5f05, image659082c148ce7dbb8cbcb2425666444f5fc562f6f0f1c00f2d8e98c03280c96b.1244TS/rootTS/secret/buildPASS. Sole guardedcutover exec31633 running; no browserdriver. Freshbackup63 SHAOFFVPS12:16, older61 payloads safelyoffloadedSHA/mountchecks. Usable79.9146 beforebuild; production/rollbackimages/volumes/history retained. Series64 prepared, notstarted; exactweb63 guard,5Chaos/2Classic, original80minbound once started.
+
+
+2026-10-09T12:20:42.733973+00:00 - web63/68b5f05 DEPLOYED12:20:03.448282923Z, image659082c148ce7dbb8cbcb2425666444f5fc562f6f0f1c00f2d8e98c03280c96b. CutoverPASS12:20:06 after naturalfinish/idlecanonical69537872/hash5ad2f615840d7dafdde94afae776fac35ae86ecc51a0ec4ab1e9cf6d880ca119, allsevenidle/human0/pending0. Onlywebchanged, allservicesresumed, no closure. Backup63SHAOFFVPS verified; rollbackweb62 retained withoutDBrestore. Sole headedseries64 exec45168 started5Chaos/2Classic, original80minbound; currentChrome360 ownedvirtualsession reauthorization. No othergame/lifecycleworker. No final24hclaim.
+
+
+2026-10-09T12:24:11.241194+00:00 - series64 exitedFAIL12:23:25 BEFORE admission: expired imported virtualWebAuthn credential lacks PRF after CDP export/import, as existing scripts/mera-virtual-prf-check.ts diagnoses. Actual UI correctly shows unsupported PRF. Zero gameplay submissions, zero sponsor operations and zero admission POSTs; no new match or uncertain command. Originalreport/screenshot/video preserved; not a physical passkey defect or gameplay proof. Publicweb63/68b5f05 unchanged. Distinctseries65 prepared with fresh nativevirtualPRF login first, then valid-session reuse, same5Chaos/2Classic original80minbound. No currentdriver.
+
+2026-10-09T12:24:36.226229+00:00: sole headed normalseries65 exec81886 running; fresh nativevirtualPRF first, then valid restoredfamily. Publicsource68b5f05/image659082c unchanged; inspect original series65 deadline/state before anydriver. Series64 before-admissionFAIL retained. No other game/lifecycleworker.
