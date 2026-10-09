@@ -2,13 +2,13 @@
 import datetime, json, os, pathlib, subprocess, time, urllib.request, sys, re
 
 root = pathlib.Path(__file__).resolve().parents[1]
-run = sys.argv[1];assert re.fullmatch(r'r2seven14',run)
+run = sys.argv[1];assert re.fullmatch(r'r2seven15',run)
 directory = root/'artifacts/qualification'/run
 directory.mkdir(exist_ok=False)
 node = r'C:/Users/wwwle/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe'
 pwsh = r'C:/Users/wwwle/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/powershell/pwsh.exe'
 names = [run+'a'+str(i) for i in range(4)] + [run+'hc',run+'hx']
-started = time.time(); deadline = int((started+30*60)*1000)
+started = time.time(); deadline = int((started+20*60)*1000)
 config = dict(runs=names,deadline=deadline,humanFirst=False)
 (directory/'barrier.json').write_text(json.dumps(config))
 report = dict(rpc='6654391',freshVirtualCredentials=True,startedAt=datetime.datetime.now(datetime.timezone.utc).isoformat(),deadline=deadline,passed=False,children=[])
@@ -67,7 +67,7 @@ try:
     launch('observer',[node,'node_modules/tsx/dist/cli.mjs','scripts/responsive-seven-way-observer.ts'],observerEnv)
     (directory/'release.json').write_text(json.dumps(release));report['release']=release;save()
     # The browser harnesses keep their own natural seven-minute game bounds.
-    while time.time()<started+40*60 and any(p.poll() is None for _,p in children):time.sleep(2)
+    while time.time()<started+30*60 and any(p.poll() is None for _,p in children):time.sleep(2)
     assert all(p.poll() is not None for _,p in children),'Original trial bound reached; inspect retained processes, do not extend'
     report['exitCodes']={name:p.returncode for name,p in children}
     assert all(p.returncode==0 for _,p in children),'One or more real browser gates failed'

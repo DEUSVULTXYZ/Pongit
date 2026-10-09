@@ -7,7 +7,8 @@ export async function browserQualificationBarrier(run:string){
  const root=resolve('artifacts/qualification')+sep,dir=resolve(requested);
  assert(dir.startsWith(root)&&/^[a-z0-9-]+$/.test(run));
  const config=JSON.parse(await readFile(resolve(dir,'barrier.json'),'utf8'));
- assert(config.runs.includes(run)&&Number.isFinite(config.deadline)&&config.deadline>Date.now()&&config.deadline<=Date.now()+20*60_000);
+ assert(config.runs.includes(run)&&Number.isFinite(config.deadline)&&config.deadline>Date.now()&&config.deadline<=Date.now()+20*60_000,
+  'Admission barrier requires a listed run and an original deadline within twenty minutes');
  await writeFile(resolve(dir,run+'.ready.json'),JSON.stringify({run,readyAt:new Date().toISOString()}),{flag:'wx'});
  while(Date.now()<config.deadline){
   try{
