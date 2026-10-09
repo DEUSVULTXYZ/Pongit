@@ -12,7 +12,11 @@
 .accessibleScore { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 :global(.cabinet-dialog) .modal:global(.rooms-dialog):global(.connect-modal) { width: min(1360px, calc(100vw - 24px), calc((100dvh - 244px)*16/9 + 200px)); max-width: 1360px; padding: 20px 16px; border: 8px solid transparent; border-radius: 0; border-image: url('/art/pixel-palace/frame-violet.svg') 40 fill / 12px / 0 stretch; background: var(--palace-panel, #11112c); }
 @media(min-width:1024px){
- :global(.cabinet-dialog) .modal:global(.rooms-dialog):global(.connect-modal){padding:12px 16px;max-height:calc(100dvh - 24px)}
+ /* The vertical budget includes the title, score and accessible controls.
+    Only Chaos needs the extra side rail; giving its width to Classic enlarged
+    the 16:9 court and pushed the replay controls below the dialog. */
+ :global(.cabinet-dialog) .modal:global(.rooms-dialog):global(.connect-modal){--replay-rail:0px;width:min(1360px,calc(100vw - 24px),calc((100dvh - 258px)*16/9 + 68px + var(--replay-rail)));padding:12px 16px;max-height:calc(100dvh - 24px)}
+ :global(.cabinet-dialog) .modal:global(.rooms-dialog):global(.connect-modal):has([aria-label="Chaos effects"]){--replay-rail:144px}
  .heading{top:-12px;padding-block:0;min-height:44px}
  :global(.cabinet-dialog) .modal .replay>p{margin:2px 0;font-size:14px;line-height:18px}
  .replay .recording{padding:8px;display:grid;grid-template-columns:minmax(0,1fr) 132px;gap:8px 12px}
