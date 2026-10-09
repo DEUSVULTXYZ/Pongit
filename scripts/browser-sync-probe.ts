@@ -138,7 +138,7 @@ export async function installSyncProbe(page:Page){
     const side=x===22?0:1,last=data.paddles.at(-1);
     // Split-paddle sprites are two pieces of one actor in the same paint.
     if(last?.paint===paint&&last.side===side){last.top=Math.min(last.top,y);last.bottom=Math.max(last.bottom,y+h);last.y=(last.top+last.bottom)/2;last.height=last.bottom-last.top;}
-    else if(data.paddles.length<80000)data.paddles.push({at:frameAt??performance.now(),paintedAt:performance.now(),paint,side,y:y+h/2,height:h,top:y,bottom:y+h,
+    else if(data.paddles.length<80000)data.paddles.push({at:this.canvas.dataset.frameAt?Number(this.canvas.dataset.frameAt):frameAt??performance.now(),paintedAt:performance.now(),paint,side,y:y+h/2,height:h,top:y,bottom:y+h,
      rally:this.canvas.dataset.rally,finished:props?.state?.finished,observedAt:observed});
     return;
    }

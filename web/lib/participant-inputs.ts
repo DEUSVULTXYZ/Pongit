@@ -21,9 +21,17 @@ export class ParticipantInputs {
  private confirmedRevision=0;
  private nextInputId=0;
  private local:LocalIntent[]=[];
+ private listeners=new Set<()=>void>();
+ private localPaintQueued=false;
+ subscribeLocal(listener:()=>void){this.listeners.add(listener);return()=>{this.listeners.delete(listener);};}
  localIntent(direction:-1|0|1,at:number){
   if(this.local.at(-1)?.direction===direction)return;
   this.local.push({direction,at});if(this.local.length>128)this.local.shift();
+  // Flush the last pre-release fraction in this input task, not a later RAF.
+  // This microtask never holds the command sender or changes its nonce queue.
+  if(!this.localPaintQueued){this.localPaintQueued=true;queueMicrotask(()=>{
+   this.localPaintQueued=false;for(const listener of this.listeners)listener();
+  });}
  }
  get localControls():readonly LocalIntent[]{return this.local;}
  get revision(){return this.confirmedRevision;}

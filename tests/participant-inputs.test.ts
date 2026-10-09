@@ -15,6 +15,14 @@ test('local intent timestamps survive receipt pruning and reset with their match
  inputs.reset();assert.deepEqual(inputs.localControls,[]);
 });
 
+test('input paints are coalesced before the next frame and detached on unmount',async()=>{
+ const inputs=new ParticipantInputs();let paints=0;
+ const detach=inputs.subscribeLocal(()=>{paints++;assert.equal(inputs.localControls.at(-1)?.direction,0);});
+ inputs.localIntent(1,0);inputs.localIntent(0,8);assert.equal(paints,0);
+ await Promise.resolve();assert.equal(paints,1);
+ inputs.localIntent(1,12);detach();await Promise.resolve();assert.equal(paints,1);
+});
+
 for(const mode of ['classic','chaos'] as const)for(const side of [0,1] as const)test(`${mode}: a new direction cannot rewrite the already displayed rally (side ${side})`,()=>{
  // Chaos 883: a 427 ms command delay left the monotonic display at 8.54s
  // while the latest live snapshot was at 8.21s. The next key was previously

@@ -301,6 +301,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
       coherentControls={side>=0?[...queuedDirections(snapshot.sync?.pendingControls??0n),...inputTimeline.current.controls(side as 0|1,snapshot.state.t)]:undefined}
       confirmedInputRevision={inputTimeline.current.revision}
       readIntent={side>=0?processed=>({direction:immediateDirection.current,local:inputTimeline.current.localControls,controls:[...queuedDirections(latestSnapshot.current?.sync?.pendingControls??0n),...inputTimeline.current.controls(side as 0|1,processed)],revision:inputTimeline.current.revision}):undefined}
+      subscribeIntent={listener=>inputTimeline.current.subscribeLocal(listener)}
       onPaint={id=>{if(id===refKey)paintedAt.current=performance.now();}}
       onInputClock={(matchId,frame)=>{inputClock.current={matchId,frame};}}
       progressionLimit={snapshot.phase!==2?snapshot.state.t:snapshot.sync?.pause.human?snapshot.sync.pause.limitUs:undefined}

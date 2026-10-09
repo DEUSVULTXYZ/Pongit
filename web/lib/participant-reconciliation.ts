@@ -56,6 +56,13 @@ export class ParticipantReconciliation {
      // the old release lock preserved a paddle different from live physics.
      let y=this.localPicture.y;
      for(const part of local.motion)y=clamp(y+part.direction*local.speed*part.ms/1000,current.halves[side],576-current.halves[side]);
+     if(local.direction===0){
+      // Receipt quantization can still differ slightly from local input time.
+      // Spend at most TWO units in total for this stop, never subtract a
+      // reconciliation velocity from a held direction or leave a long tail.
+      const correction=clamp(current.paddles[side]-y,-this.stopCorrection,this.stopCorrection);
+      y+=correction;this.stopCorrection-=Math.abs(correction);
+     }
      this.paddles[side]=y-current.paddles[side];
     }else{
     if(released&&this.stoppedAt!==undefined){

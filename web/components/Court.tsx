@@ -55,6 +55,7 @@ type Props = {
   onInputClock?:(matchId:string,frame:ParticipantPresentationClock)=>void;
   onPaint?:(matchId:string)=>void;
   readIntent?:(processed:bigint)=>{direction:number;controls:readonly TimedControl[];revision:number;local?:readonly LocalIntent[]};
+  subscribeIntent?:(listener:()=>void)=>(()=>void);
   onStats: (fps: number, extrapolated: boolean, waiting: boolean,cause?:PresentationWait) => void;
 };
 export function Court({
@@ -69,7 +70,7 @@ export function Court({
   matchId,
   controllable,
   pending,
-  onStats, pendingInputs = [], confirmedNonce = 0n, coherentControls,confirmedInputRevision,housePrediction,progressionLimit,debug = false, liveEngine = false, bufferedSpectator = false, externalIntermission = false, onNetwork = ()=>{}, onPlayback = ()=>{}, onInputClock,onPaint,readIntent,
+  onStats, pendingInputs = [], confirmedNonce = 0n, coherentControls,confirmedInputRevision,housePrediction,progressionLimit,debug = false, liveEngine = false, bufferedSpectator = false, externalIntermission = false, onNetwork = ()=>{}, onPlayback = ()=>{}, onInputClock,onPaint,readIntent,subscribeIntent,
 }: Props) {
   state=useMemo(()=>state?responsiveState(state,rulesVersion??0):null,[state,rulesVersion]);
   chaos=useMemo(()=>chaos?{...chaos,physics:responsiveState(chaos.physics,rulesVersion??0)}:undefined,[chaos,rulesVersion]);
@@ -125,6 +126,7 @@ export function Court({
     let localPaintAt=performance.now();
     function draw(now: number) {
       let p = current.current;
+      if(measureControls)el.dataset.frameAt=String(now);
       const paintedAt=performance.now(),priorPaintAt=localPaintAt;localPaintAt=paintedAt;
       let localControls:readonly LocalIntent[]|undefined;
       // Keyboard intent and ACKs are stored outside React. An unrelated render
@@ -368,9 +370,10 @@ export function Court({
       frame = requestAnimationFrame(draw);
     }
     const visibility=()=>{cancelAnimationFrame(frame);reconciliation.reset();previousParticipant=undefined;playout.reset();playerPlayout.reset();trail.reset();chaosTrails.forEach(t=>t.reset());if(!document.hidden){last=lastDraw=performance.now();count=0;previousSound=null;seenEffects=new Set(current.current.chaos?.physics.effects.map(e=>e.serial)||[]);frame=requestAnimationFrame(draw);}};
+    const unsubscribe=subscribeIntent?.(()=>{if(!document.hidden){cancelAnimationFrame(frame);draw(performance.now());}});
     document.addEventListener("visibilitychange",visibility);
     if(!document.hidden)frame = requestAnimationFrame(draw);
-    return () => {cancelAnimationFrame(frame);document.removeEventListener("visibilitychange",visibility);};
+    return () => {unsubscribe?.();cancelAnimationFrame(frame);document.removeEventListener("visibilitychange",visibility);};
   }, []);
   return (
     <canvas
