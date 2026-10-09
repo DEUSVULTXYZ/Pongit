@@ -42,3 +42,12 @@ The actual Chaos PvP73 trace contains a Last Chance shield collision at x=15.999
 Candidate `0df141f9e274d07cf5815a17003226584f790649` preserves confirmed per-ball collision waypoints and limits additional catch-up speed to 120 units/s. Simultaneous balls retain independent routes. Human rules18 also use the approved 50 ms idle physics pilot, skipping a tick after commands have advanced the game. The single nonce owner and legacy cadence are preserved. The two captured failures reproduce before the fix; 57 focused tests, all 1,254 TypeScript tests, type checking, Linux build and secret scan pass afterward. Hosted browser verification is still required.
 
 The disconnected Chaos73 wager was settled automatically at canonical block 69560883, transaction `0x79a5f97c61029efb8b1a15ef2db2213f95ad3b060bba7396b2b3cf148d5d156c`. It was a losing wager with zero amount due. Both duplicate claim paths reverted. This proves zero-value settlement and deduplication, **not a positive payout transfer**.
+
+
+## Web68 rollout
+
+The shared contact fix was deployed on 9 October at 14:38:44 UTC. Image: `sha256:e9aeaa2a9e4d2b4577f7b04e630ac0153a33550fc979215313f60f16726bf739`, source `0df141f9e274d07cf5815a17003226584f790649`. The guard verified an idle canonical block 69565140 (`0xd73070b6d53fd1fc7c0ac4daeeac9f7f1374ebfdadb1ad0f0bc76ec982a0b38f`) and changed only the web service. Existing games completed naturally; contracts and delegations were not closed.
+
+Backup68 contains 346,199,300 bytes across five database dumps and the private runtime archive, SHA-verified off VPS at 14:37:39 UTC. Manifest: `7186e334c085b273e335e502fb556b62dacc1a19f6cbf3ab1df8f63924c85b5f`. Immediate service rollback is web67, image `sha256:d45f3c2de3248a3702b005698ae167806e53f27e1e698bbfbc47eaa82b8f7a2c`; preserve all subsequent database writes. This rollback restores the previously documented contact limitations.
+
+PvP74 is the only running browser driver, with an original deadline of 15:09:04 UTC. New normal-agent and multiball series74 are prepared but have not run. Earlier successful series72 does not qualify this changed shared renderer.
