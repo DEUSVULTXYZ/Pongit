@@ -1,0 +1,33 @@
+{
+  "ref": {
+    "app": "0x077df08FA9Ff9BBFcBA2a3C6879bCf3B21EFd3Df",
+    "epoch": "1",
+    "id": "1576"
+  },
+  "originalPassed": false,
+  "reportSha256": "6e299ee43e979d86b907a9b818e97a8361fb7ea18ee6ce5b70563b6376256aaf",
+  "failure": "Natural-match synchronization gate failed",
+  "naturalGates": {
+    "noPause": true,
+    "noResume": true,
+    "noResync": true,
+    "peer": false,
+    "player": true,
+    "spectator": true,
+    "executionClock": true
+  },
+  "peerReception": {
+    "samples": 151,
+    "p95Ms": 1375.621337890625,
+    "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+    "basis": "compact send entry to independent observer ControlQueued live event"
+  },
+  "sendLatency": {
+    "samples": 151,
+    "p95Ms": 20,
+    "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+  },
+  "rootCauseStatus": "Unresolved: applied events delayed only on observer connection. Need native network vs callback timestamps before attributing transport, provider or application.",
+  "product": "2499ce1",
+  "productChanged": false
+}

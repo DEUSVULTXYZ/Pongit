@@ -1859,3 +1859,8 @@ Series62 exitedFAIL12:00:52 after third1550. First1548/1549PASS. Mobile1550 natu
 
 
 2026-10-09T13:02:31.151281+00:00 - series67 stopped:1570PASS natural7-4/42.418s Chrome360;1571FAIL natural1-7/52.036s Chrome1440 solely held-speed measurement. Both0pauses/resync/crossings/jumps/fakebounces.1571 RAF window100.2ms but actual paints105.8ms; displacement31.65units equals integrated105.5ms exactly. ReadonlyauditPASS realpaint ratio.99716 vs RAF1.05289; originalFAIL retained. Measurement now uses actualpaint intervals, unchanged95..105% threshold and retainsRAFmetrics;47focusedPASS/rootTSrunning. Productweb65/2499ce1 unchanged, no deploymentrequired. No driver active; distinctprospectiveseries68 prepared5Chaos/2Classic. No multiball in1570/1571.
+
+2026-10-09T13:04:19.690196+00:00 - soleheadedseries68 exec90370 running; originaldeadline2026-10-09T14:22:40.6810366Z, first1573Chrome360 admitted. Actualpaint-speed probe47focused/rootTS/secretPASS andpublished193c535. Publicweb65/2499ce1 unchanged. No competingdriver/lifecycleaction.
+
+
+2026-10-09T13:12:28.378995+00:00 - series68 exitedFAIL1576 after first1573/1574/1575PASS.1576natural7-4,0pauses/resync/jumps/crossings/falsebounces,maxplayerhold83ms/spectator250ms. Peer eventp951375.6ms FAIL vs send20ms;15delayed commands during2.7s observerbacklog, playerreceiptsnormal. No currentdriver. RootcauseUNRESOLVED; nativeCDP arrival vs callback instrumentation added, no productchange. Publicweb65/2499ce1 preserved. Need bounded read-only/native diagnosis, no newcontract/lifecycleaction. No multiball infirst3;1576none.

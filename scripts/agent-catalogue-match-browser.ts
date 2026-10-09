@@ -253,10 +253,21 @@ const receiptMeta=(receipt:any)=>{
   ...(revertName?{revertName}:{})};
 };
 const starts=new WeakMap<object,number>(),submitted=new Map<string,number>(),submittedActions=new Map<string,string>(),receipts=new Set<string>();
-report.sockets=[];report.peerEvents=[];report.peerApplied=[];
+report.sockets=[];report.peerEvents=[];report.peerApplied=[];report.peerNative=[];
 report.receiptProbe={enabled:receiptProbe,reads:[]};let receiptProbeCount=0;
 const peerSeen=new Set<string>();
-const observePeer=(peer:import('@playwright/test').Page)=>peer.on('websocket',ws=>ws.on('framereceived',event=>{try{
+const observePeer=async(peer:import('@playwright/test').Page)=>{
+ const native=await peer.context().newCDPSession(peer);await native.send('Network.enable');
+ const epochs=new Map<string,number>();
+ native.on('Network.webSocketWillSendHandshakeRequest',e=>epochs.set(e.requestId,e.wallTime*1000-e.timestamp*1000));
+ native.on('Network.webSocketFrameReceived',e=>{try{
+  const value=JSON.parse(e.response.payloadData).params?.result,epoch=epochs.get(e.requestId);
+  if(epoch===undefined||typeof value?.hash!=='string'||!/^0x[\da-f]{64}$/i.test(value.hash))return;
+  // Network arrival vs Playwright dispatch, without retaining event payloads.
+  report.peerNative.push({hash:value.hash,head:value.blockNumber,receivedAt:epoch+e.timestamp*1000,
+   callbackAt:performance.timeOrigin+performance.now()});
+ }catch{/* Public hashes and times only. */}});
+ peer.on('websocket',ws=>ws.on('framereceived',event=>{try{
  const frame=JSON.parse(String(event.payload)).params?.result;
  if(typeof frame?.hash==='string'&&/^0x[\da-f]{64}$/i.test(frame.hash))report.peerApplied.push({hash:frame.hash,block:frame.blockNumber,receivedAt:performance.timeOrigin+performance.now()});
  for(const log of frame?.logs??[]){
@@ -266,6 +277,7 @@ const observePeer=(peer:import('@playwright/test').Page)=>peer.on('websocket',ws
   report.peerEvents.push({receivedAt:performance.timeOrigin+performance.now(),id:String(decoded.args.id),side:Number(decoded.args.side),sequence:String(decoded.args.sequence),direction:Number(decoded.args.action)-2});
  }
 }catch{/* Only decoded game identifiers/times, never event payloads. */}}));
+};
 page.on('websocket',ws=>{const record:any={host:new URL(ws.url()).host,openedAt:new Date().toISOString(),messages:0,applied:0,schemas:{}};report.sockets.push(record);
  const writes=new Map<string,{at:number;hash:string;action:string}>();
  ws.on('framesent',async event=>{try{
@@ -465,7 +477,7 @@ async function prepareSpectator(url:string){
  if(actualBackground)backgroundObserver=await chromium.launch({channel,headless:true});
  spectatorContext=await (backgroundObserver??browser).newContext({viewport:{width:1440,height:900},
   ...(process.env.PONG_CATALOGUE_VIDEO==='1'?{recordVideo:{dir:out+'/observer-video',size:{width:1440,height:900}}}:{})});
- spectator=await spectatorContext.newPage();observePeer(spectator);await candidateAssets(spectator);await installSyncProbe(spectator);await videoClock(spectator);
+ spectator=await spectatorContext.newPage();await observePeer(spectator);await candidateAssets(spectator);await installSyncProbe(spectator);await videoClock(spectator);
  await spectator.addInitScript(()=>localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'})));
  await spectator.goto(url,{waitUntil:'domcontentloaded'});
 }
