@@ -1,0 +1,43 @@
+{
+  "passed": true,
+  "originalPassed": false,
+  "kind": "Recorded geometry measurement audit; original browser FAIL remains",
+  "ref": {
+    "app": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e",
+    "epoch": "1",
+    "id": "1581"
+  },
+  "traceSha256": "30f022548af28a7883d6f6a998a15f5d868d902eb942487fa684f577591893b5",
+  "before": [
+    {
+      "at": 40541.1,
+      "side": 1,
+      "dt": 16.69999999999709,
+      "d": 11.938555786122443,
+      "limit": 9.013999999998777,
+      "from": 48.399506232798146,
+      "to": 60.33806201892059,
+      "observedAt": 1791551658358
+    }
+  ],
+  "after": [
+    {
+      "at": 40541.1,
+      "side": 1,
+      "from": 48.399506232798146,
+      "to": 60.33806201892059,
+      "oldHeight": 96,
+      "newHeight": 120,
+      "observedAt": 1791551658358,
+      "retainedWallOffset": true
+    }
+  ],
+  "peer": {
+    "paired": 596,
+    "p95Ms": 2.36669921875,
+    "maxMs": 42.329833984375,
+    "previous1576Cause": "Not reproduced; unresolved"
+  },
+  "productUnchanged": "2499ce1",
+  "firstFixtureFailure": "Missing second Chaos slot; corrected fixture, original logs retained"
+}

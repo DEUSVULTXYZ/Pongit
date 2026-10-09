@@ -225,6 +225,23 @@ export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];wa
   if(d>limit){
    const clamped=Math.max(confirmedHalf,Math.min(576-confirmedHalf,a.y));
    const liveCenter=Number(snapshot?.state?.[b.side===0?'left':'right'])/1e6;
+   const prior=byObservation.get(a.observedAt);let priorHalf=Number(prior?.state?.[b.side===0?'halfA':'halfB'])/1e6;
+   if(prior?.chaos){const raw=prior.chaos.physics,mods=eventPaddles({...raw,t:BigInt(raw.t),paddleSpeed:rulesPaddleSpeed(prior.rulesVersion??0)});
+    priorHalf=Number(chaosOuterHalf(b.side===0?mods.heightA:mods.heightB,b.side===0?mods.splitA:mods.splitB))/1e6;}
+   const priorCentre=Number(prior?.state?.[b.side===0?'left':'right'])/1e6;
+   // Edge1581: confirmed growth moved a wall-bound centre48 ->60 while a
+   // pre-existing subpixel offset diminished .3995 ->.3381. The visible wall
+   // edge stayed continuous. Accept only two actual same-wall confirmations
+   // with the exact sizes and a shrinking inward offset, never a new jump.
+   const retainedWallOffset=[1,-1].some(sign=>{
+    const oldWall=sign===1?priorHalf:576-priorHalf,newWall=sign===1?confirmedHalf:576-confirmedHalf;
+    const oldOffset=sign*(a.y-oldWall),newOffset=sign*(b.y-newWall);
+    return prior&&snapshot&&(prior.matchId??prior.state.id)!==undefined
+     &&(prior.matchId??prior.state.id)===(snapshot.matchId??snapshot.state.id)&&prior.rulesVersion===snapshot.rulesVersion
+     &&prior.state.scoreA===snapshot.state.scoreA&&prior.state.scoreB===snapshot.state.scoreB
+     &&Math.abs(a.height/2-priorHalf)<.001&&Math.abs(priorCentre-oldWall)<.001&&Math.abs(liveCenter-newWall)<.001
+     &&oldOffset>=0&&newOffset>=0&&newOffset<=oldOffset&&oldOffset-newOffset<=limit;
+   });
    // An enlarged paddle at the wall must move its centre to stay in bounds.
    // Classify only the exact live-confirmed clamp, never any jump merely
    // coinciding with an effect or a different sprite height.
@@ -265,8 +282,8 @@ export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];wa
    if(scheduledConfirmation){
     geometryClamps.push({at:b.at,side:b.side,from:a.y,to:b.y,oldHeight:a.height,newHeight:b.height,observedAt:b.observedAt,scheduledConfirmation});
    }else if(b.height>a.height&&Math.abs(b.height/2-confirmedHalf)<.001&&Math.abs(clamped-a.y)>.001
-    &&Math.abs(b.y-clamped)<.001&&Math.abs(liveCenter-clamped)<.001){
-    geometryClamps.push({at:b.at,side:b.side,from:a.y,to:b.y,oldHeight:a.height,newHeight:b.height,observedAt:b.observedAt});
+    &&(Math.abs(b.y-clamped)<.001&&Math.abs(liveCenter-clamped)<.001||retainedWallOffset)){
+    geometryClamps.push({at:b.at,side:b.side,from:a.y,to:b.y,oldHeight:a.height,newHeight:b.height,observedAt:b.observedAt,retainedWallOffset});
    }else paddleJumps.push({at:b.at,side:b.side,dt,d,limit,from:a.y,to:b.y,observedAt:b.observedAt});
   }
  }

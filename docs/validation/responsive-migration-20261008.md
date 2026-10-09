@@ -1864,3 +1864,6 @@ Series62 exitedFAIL12:00:52 after third1550. First1548/1549PASS. Mobile1550 natu
 
 
 2026-10-09T13:12:28.378995+00:00 - series68 exitedFAIL1576 after first1573/1574/1575PASS.1576natural7-4,0pauses/resync/jumps/crossings/falsebounces,maxplayerhold83ms/spectator250ms. Peer eventp951375.6ms FAIL vs send20ms;15delayed commands during2.7s observerbacklog, playerreceiptsnormal. No currentdriver. RootcauseUNRESOLVED; nativeCDP arrival vs callback instrumentation added, no productchange. Publicweb65/2499ce1 preserved. Need bounded read-only/native diagnosis, no newcontract/lifecycleaction. No multiball infirst3;1576none.
+
+
+2026-10-09T13:19:36.978483+00:00 - series69 exitedFAIL1581 natural3-7, no real pause/resync/crossing/fakebounce. Harness treated confirmed96->120 wallgrowth as rollback because .3995px existingoffset decayedto.3381. Exactold/newcanonicalwall/size/reference regression nowclassifies documentedgrowth; originalFAIL/firstinvalidfixtureFAIL retained,59focusedPASS/fullTS/rootTSrunning. Independentread-onlywireprobe27480 finished90s/596frames, nativeobserverp95arrival2.367mslater/max42.33;1576latencyincidentNOTreproduced/unresolved. No game/browser/probeactive. Publicweb65/2499ce1 unchanged. Series70 prepared, notstarted; no build/contract/lifecycleaction.

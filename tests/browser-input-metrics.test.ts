@@ -60,6 +60,25 @@ test('confirmed input includes the unsent queue and both sides of F5',()=>{
  assert.equal(value.samples,3);assert.equal(value.maxMs,515);assert.deepEqual(value.mismatches,[]);
 });
 
+test('1581 wall growth preserves a diminishing visual offset without inventing rollback',()=>{
+ for(const bottom of [false,true]){
+  const y=(v:number)=>bottom?576-v:v;
+  const snap=(at:number,t:string,centre:number)=>({at,observedAt:at,rulesVersion:17,clock:t,
+   state:{id:'1581',t,right:String(y(centre)*1e6),scoreA:2,scoreB:4},
+   chaos:{physics:{t,bettingA:96000000,bettingB:96000000,effects:[{id:1,target:1,remaining:0,serial:3,startsAt:30800,expiresAt:36800,variant:0},
+    {id:0,target:0,remaining:0,serial:0,startsAt:0,expiresAt:0,variant:0}]}}});
+  const trace={frames:[],snapshots:[snap(0,'30710000',48),snap(16,'30810000',60)],paddles:[
+   {at:0,y:y(48.3995062328),rally:'6',side:1,observedAt:0,height:96},
+   {at:16.7,y:y(60.3380620189),rally:'6',side:1,observedAt:16,height:120}]};
+  const m=syncMetrics(trace);assert.equal(m.paddleJumps.length,0);assert.equal(m.geometryClamps.length,1);
+  for(const change of [
+   (d:any)=>d.snapshots.shift(),(d:any)=>d.snapshots[0].state.right=String(y(52)*1e6),
+   (d:any)=>d.paddles[1].y=y(61),(d:any)=>d.paddles[1].y=y(59.9),
+   (d:any)=>d.paddles[1].height=110,(d:any)=>d.snapshots[1].chaos.physics.effects[0].id=0,
+  ]){const d=structuredClone(trace);change(d);assert.equal(syncMetrics(d).paddleJumps.length,1);}
+ }
+});
+
 test('1322 known small-paddle expiry needs exact geometry and prompt live confirmation',()=>{
  const none={id:0,target:0,remaining:0,serial:0,startsAt:0,expiresAt:0,variant:0};
  const before={at:100,observedAt:100,rulesVersion:17,clock:'46490000',state:{id:'1322',t:'46490000',left:'38400000',scoreA:1,scoreB:2},
