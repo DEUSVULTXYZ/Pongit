@@ -30,6 +30,7 @@ import {initializeReusableResultArchive,createReusableResultArchive} from '../re
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {BackgroundObservation} from '../shared/background-observation';
 import {agentRuntimeObservations} from '../shared/agent-runtime-observations';
+import {agentAdmissionReads} from '../shared/agent-admission-reads';
 import {publisherFunding} from '../shared/publisher-funding';
 import {verifyHouseInstanceAuthorities} from '../shared/agent-house-instances';
 import {publicationUnavailable,publicationFailureDetails} from '../shared/service-error';
@@ -64,6 +65,7 @@ const delay=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 const clean=(e:any)=>String(e?.shortMessage??e?.message??'Arena unavailable').split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,220);
 // One shared canonical observation for all arena loops, no per-tick lobby RPC.
 const {assignments,hub:sharedHub}=agentRuntimeObservations(controlBase,m.pool,m.hub,r.arenas.map((a:any)=>a.app),m.maxMatches);
+const admissionReads=agentAdmissionReads(controlBase,m.pool,r.arenas.map((a:any)=>a.app));
 const funding=publisherFunding(base);
 async function replayLoop(){while(!stopping){try{await replays.reconcile(async ref=>(await replayReader.match(ref)).value);}catch{console.error(JSON.stringify({service:'reusable-replays',error:'Reconciliation pending'}));}
  for(let n=0;n<60&&!stopping;n++)await delay(1000);}}
@@ -185,7 +187,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
    const ticketKey=`${ref.epoch}:${ref.id}`;
    if(cachedTicket?.key!==ticketKey){
     const discoveredAt=Date.now();
-    const pair=await controlBase.readContract({address:m.pool,abi:poolAbi,functionName:'ticketOf',args:[entry.ref],blockNumber:block.number});
+    const pair=await admissionReads.ticket(entry.ref,common.lanes,block);
     cachedTicket={key:ticketKey,pair,discoveredAt,ticketMs:Date.now()-discoveredAt};
    }
    const [ticket,binding]=cachedTicket.pair;
@@ -231,7 +233,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
     // before signing; a failed code/header/ticket read cannot admit a player.
     const [issuedDigest,source,engineCodeHashA,engineCodeHashB]=await Promise.all([
      controlBase.readContract({address:m.pool,abi:poolAbi,functionName:'issuedTicket',args:[app,ref.epoch,ticket.sequence],blockNumber:block.number}),
-     controlBase.getBlock({blockNumber:ticket.sourceBlock}),code(binding.controlA,binding.a),code(binding.controlB,binding.b),
+     admissionReads.source(ticket.sourceBlock),code(binding.controlA,binding.a),code(binding.controlB,binding.b),
     ]);
     const evidence={chainId:10143,hub:m.hub,authority:m.pool,arena:app,reservedMatch:ref.id,
      issuedDigest,sourceHash:source.hash!,hubEpoch:d.epoch,hubStatus:d.status,hubExpires:d.expiresAt,
