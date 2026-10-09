@@ -1,0 +1,337 @@
+{
+  "source": "5b9e6e43d718e62d39340dcbb4289be97efcc60b",
+  "startedAt": "2026-10-09T13:46:32.6197203Z",
+  "finishedAt": "2026-10-09T13:57:26.7166699Z",
+  "scope": "Seven natural production games with headed Chrome/Edge; virtual Mera; mobile emulation. No naturally drawn multiball coverage. Separate PvP72 failed; this is not final qualification.",
+  "games": [
+    {
+      "run": "r2final72b2",
+      "reportSha256": "16b51c82c672ab7f00d408b038b2b89770e9ad544e230f877f450942f26d8d04",
+      "ref": {
+        "app": "0x4E9fa437576B1b2B386fe1eC24D26839434Effb2",
+        "epoch": "1",
+        "id": "1602"
+      },
+      "passed": true,
+      "naturalEnded": true,
+      "gates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "peer": {
+        "samples": 212,
+        "p95Ms": 32.9736328125,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      },
+      "sync": {
+        "localInput": {
+          "samples": 104,
+          "p95Ms": 15.899999856948853,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17.799999952316284,
+        "maxHoldMs": 50,
+        "paddleJumps": []
+      },
+      "collisionCount": 6,
+      "unconfirmedBounceCount": 0,
+      "paintedCrossings": []
+    },
+    {
+      "run": "r2final72c1",
+      "reportSha256": "cbc1d93af59195f7444e7ed3dbc96f86086308dc27cd54e1756bbac83ef5d281",
+      "ref": {
+        "app": "0x0dcFDd467f7d3D80194897429E85184f46F43e98",
+        "epoch": "1",
+        "id": "1604"
+      },
+      "passed": true,
+      "naturalEnded": true,
+      "gates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "peer": {
+        "samples": 295,
+        "p95Ms": 14.464111328125,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      },
+      "sync": {
+        "localInput": {
+          "samples": 143,
+          "p95Ms": 16.600000143051147,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17.399999856948853,
+        "maxHoldMs": 66.89999985694885,
+        "paddleJumps": []
+      },
+      "collisionCount": 12,
+      "unconfirmedBounceCount": 0,
+      "paintedCrossings": []
+    },
+    {
+      "run": "r2final72c2",
+      "reportSha256": "a8bf3109de885644780b47436706a847e5035110aae4425cf90b9f83a5920b88",
+      "ref": {
+        "app": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e",
+        "epoch": "1",
+        "id": "1605"
+      },
+      "passed": true,
+      "naturalEnded": true,
+      "gates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "peer": {
+        "samples": 339,
+        "p95Ms": 15.44091796875,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      },
+      "sync": {
+        "localInput": {
+          "samples": 163,
+          "p95Ms": 15.299999952316284,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17.200000047683716,
+        "maxHoldMs": 83.40000009536743,
+        "paddleJumps": []
+      },
+      "collisionCount": 16,
+      "unconfirmedBounceCount": 0,
+      "paintedCrossings": []
+    },
+    {
+      "run": "r2final72c3",
+      "reportSha256": "6db14a2a5d3f732fd5de24f53956e7cb35ab0b99eeb876dd193aa3586a776e2a",
+      "ref": {
+        "app": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+        "epoch": "1",
+        "id": "1607"
+      },
+      "passed": true,
+      "naturalEnded": true,
+      "gates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "peer": {
+        "samples": 246,
+        "p95Ms": 15.52685546875,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      },
+      "sync": {
+        "localInput": {
+          "samples": 120,
+          "p95Ms": 15,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17.299999952316284,
+        "maxHoldMs": 67.29999995231628,
+        "paddleJumps": []
+      },
+      "collisionCount": 5,
+      "unconfirmedBounceCount": 0,
+      "paintedCrossings": []
+    },
+    {
+      "run": "r2final72c4",
+      "reportSha256": "eb95ac22ce7d0a741a06247b6b2a65235f15e1ce34c63fb0016f3084c297a4c4",
+      "ref": {
+        "app": "0x077df08FA9Ff9BBFcBA2a3C6879bCf3B21EFd3Df",
+        "epoch": "1",
+        "id": "1608"
+      },
+      "passed": true,
+      "naturalEnded": true,
+      "gates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "peer": {
+        "samples": 270,
+        "p95Ms": 19.3994140625,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      },
+      "sync": {
+        "localInput": {
+          "samples": 133,
+          "p95Ms": 16.700000047683716,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17.300000190734863,
+        "maxHoldMs": 83,
+        "paddleJumps": []
+      },
+      "collisionCount": 14,
+      "unconfirmedBounceCount": 0,
+      "paintedCrossings": []
+    },
+    {
+      "run": "r2final72c5",
+      "reportSha256": "f2b8f9287e65bb40387f3fd18820e7d9e58605ac3588ef18bfbe5dfa032d9dd7",
+      "ref": {
+        "app": "0x4E9fa437576B1b2B386fe1eC24D26839434Effb2",
+        "epoch": "1",
+        "id": "1610"
+      },
+      "passed": true,
+      "naturalEnded": true,
+      "gates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "peer": {
+        "samples": 196,
+        "p95Ms": 14.75732421875,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      },
+      "sync": {
+        "localInput": {
+          "samples": 95,
+          "p95Ms": 15.5,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17.299999952316284,
+        "maxHoldMs": 83.30000019073486,
+        "paddleJumps": []
+      },
+      "collisionCount": 2,
+      "unconfirmedBounceCount": 0,
+      "paintedCrossings": []
+    },
+    {
+      "run": "r2final72b1",
+      "reportSha256": "0aad8defcd06d595213660579071b87f2536ccc6d3f0847b984595e235f6fce5",
+      "ref": {
+        "app": "0x0dcFDd467f7d3D80194897429E85184f46F43e98",
+        "epoch": "1",
+        "id": "1612"
+      },
+      "passed": true,
+      "naturalEnded": true,
+      "gates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "peer": {
+        "samples": 244,
+        "p95Ms": 13.477294921875,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      },
+      "sync": {
+        "localInput": {
+          "samples": 112,
+          "p95Ms": 15.199999809265137,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17.200000047683716,
+        "maxHoldMs": 100.20000004768372,
+        "paddleJumps": []
+      },
+      "collisionCount": 9,
+      "unconfirmedBounceCount": 0,
+      "paintedCrossings": []
+    }
+  ]
+}

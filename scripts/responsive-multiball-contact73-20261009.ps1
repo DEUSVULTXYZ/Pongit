@@ -1,20 +1,20 @@
 $ErrorActionPreference='Stop'
-$report='artifacts/responsive-20261008-r2/multiball-contact72.json'
+$report='artifacts/responsive-20261008-r2/multiball-contact73.json'
 if(Test-Path -LiteralPath $report){throw 'Preserve the original multiball qualification'}
-$normal=Get-Content -Raw 'artifacts/responsive-20261008-r2/final-browser-series-72.json' | ConvertFrom-Json
-$human=Get-Content -Raw 'artifacts/responsive-20261008-r2/pvp-contact72.json' | ConvertFrom-Json
+$normal=Get-Content -Raw 'artifacts/responsive-20261008-r2/final-browser-series-73.json' | ConvertFrom-Json
+$human=Get-Content -Raw 'artifacts/responsive-20261008-r2/pvp-contact73.json' | ConvertFrom-Json
 if(!$normal.passed -or !$human.passed){throw 'Complete the normal agent and human browser series first'}
 $web=& ssh pongit docker inspect --format '{{.Image}}' pongit-arcade-five-arcade-web-1
-if($LASTEXITCODE -ne 0 -or $web.Trim() -ne 'sha256:ec309447cf7503fdbc020e4b0c2f0c2f7925c849ca04f645a15e4d7cc4a4a2c5'){throw 'Candidate web changed'}
+if($LASTEXITCODE -ne 0 -or $web.Trim() -ne 'sha256:d45f3c2de3248a3702b005698ae167806e53f27e1e698bbfbc47eaa82b8f7a2c'){throw 'Candidate web changed'}
 $env:PONG_CATALOGUE_RECEIPT_PROBE='read-only'
 $env:PONG_CATALOGUE_NODE_DIAGNOSTICS='read-only'
 $deadline=(Get-Date).ToUniversalTime().AddMinutes(65)
-$state=@{startedAt=(Get-Date -AsUTC -Format o);deadline=$deadline.ToString('o');web='5b9e6e4';passed=$false;completed=@();active=$null;maxGames=8;bot='ONYX';requiredFrames=60;requiredSecondBallContacts=1}
+$state=@{startedAt=(Get-Date -AsUTC -Format o);deadline=$deadline.ToString('o');web='bea0e24';passed=$false;completed=@();active=$null;maxGames=8;bot='ONYX';requiredFrames=60;requiredSecondBallContacts=1}
 $restore=''
 try{
  for($index=1;$index -le 8;$index++){
   if((Get-Date).ToUniversalTime().AddMinutes(8) -ge $deadline){throw 'Original multiball deadline leaves insufficient match time'}
-  $run="r2multi72c$index"
+  $run="r2multi73c$index"
   $state.active=$run
   [IO.File]::WriteAllText((Join-Path (Get-Location) $report),($state | ConvertTo-Json -Depth 8))
   # A stronger opponent sustains rallies and more natural Chaos draws. The
