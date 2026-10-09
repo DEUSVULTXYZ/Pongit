@@ -184,7 +184,12 @@ export function rpcScheduler(spacingMs:number) {
   const queues={live:[] as Array<()=>void>,control:[] as Array<()=>void>,foreground:[] as Array<()=>void>,history:[] as Array<()=>void>,transaction:[] as Array<()=>void>,fence:[] as Array<()=>void>,submission:[] as Array<()=>void>};
   let next=0,timer:ReturnType<typeof setTimeout>|undefined,liveRun=0,controlRun=0,foregroundRun=0,transactionRun=0,fenceRun=0,submissionRun=0,effectiveSpacing=spacingMs,lastAdjustment=-Infinity;
   // One ordinary read after four control checks; one historical read after
-  // four total interactive reads. History does not reset the ordinary quota.
+  // four total interactive reads at rest. During foreground admissions or
+  // transaction work, backfill yields until sixteen interactive dispatches.
+  // This reserves a bounded 1/17 share instead of spending 20% of the scarce
+  // RPC budget on old archives during a player entry. History still advances
+  // under an unbounded admission load and restores its old share when drained.
+  // History does not reset the ordinary quota.
   // A foreground hint must not put every catalogue/match hydration in front
   // of an already accepted transaction's nonce, fees and receipt. Preserve
   // the existing upstream budget and both background fairness guarantees.
@@ -199,7 +204,7 @@ export function rpcScheduler(spacingMs:number) {
   // A submission gets one turn between ordinary interactive jobs. Fences do
   // not reset this quota: constant receipt polling cannot starve preparation.
   const choose=(l:number,c:number,f:number,h:number,t:number,g:number,b:number,run:number,urgentRun:number,controlBurst:number,transactionBurst:number,fenceBurst:number,submissionBurst:number):keyof typeof queues=>
-   h>0&&(!(l+c+f+t+g+b)||run>=4)?'history':g>0&&(!(l+c+f+t+b)||fenceBurst<1)?'fence':
+   h>0&&(!(l+c+f+t+g+b)||run>=(f+t+b>0?16:4))?'history':g>0&&(!(l+c+f+t+b)||fenceBurst<1)?'fence':
     b>0&&(!(l+c+f+t)||submissionBurst<1)?'submission':
     l>0&&(!(c+f+t)||urgentRun>=4)?'live':
     f>0&&controlBurst>=1?'foreground':

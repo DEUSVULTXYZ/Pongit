@@ -339,7 +339,7 @@ test('seven simultaneous entries cannot put hydration ahead of transaction prepa
  for(let i=0;i<jobs.length;i++){t.mock.timers.tick(60);await Promise.resolve();}
  await Promise.all(jobs);
  assert.deepEqual(seen.slice(1,4).map(v=>v.name),['transaction0','hydration0','transaction1']);
- assert(seen.findIndex(v=>v.name==='archive0')<=5,'History retains its one-in-five budget');
+ assert(seen.findIndex(v=>v.name==='archive0')<=17,'History retains its bounded admission-pressure share');
  assert(seen.findIndex(v=>v.name==='ordinary0')<=6,'Ordinary reads still progress');
  assert(seen.findIndex(v=>v.name==='hydration0')<=7,'Foreground reads cannot starve');
  assert(seen.every((v,i)=>!i||v.at-seen[i-1].at>=60),'No extra upstream throughput');
@@ -375,7 +375,7 @@ test('transaction work overtakes routine canonical headers and preserves every q
  assert(seen.findIndex(v=>v.name==='header0')<=8);
  assert(seen.findIndex(v=>v.name==='foreground0')<40);
  assert(seen.findIndex(v=>v.name==='ordinary0')<=6);
- assert(seen.findIndex(v=>v.name==='archive0')<=5);
+ assert(seen.findIndex(v=>v.name==='archive0')<=17);
  assert.equal(seen.find(v=>v.name==='transaction-tail')!.at-1000,expected);
  assert(seen.every((v,i)=>!i||v.at-seen[i-1].at===75));
  assert.deepEqual(s.pending(),{interactive:0,history:0});
@@ -514,7 +514,30 @@ test('six login simulations cannot expire behind sustained transactions and cano
   const player=seen.filter(r=>r.kind==='foreground');
   assert(player[5].at-start<=5000,'The six first login simulations need a bounded share before the 8/10-second caller timeouts');
   assert.equal(player[6].at-start,estimate);
-  for(const kind of ['transaction','control','live','history'])assert(seen.slice(0,12).some(r=>r.kind===kind),kind+' must still progress');
+  for(const kind of ['transaction','control','live','history'])assert(seen.slice(0,17).some(r=>r.kind===kind),kind+' must still progress');
   assert(seen.every((r,i)=>!i||r.at-seen[i-1].at===spacing),'No additional provider throughput');
+ }
+});
+
+
+test('archive backfill yields its burst during admissions without losing its bounded turn',async(t)=>{
+ t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});
+ for(const spacing of [60,75,85]){
+  const q=rpcScheduler(spacing),seen:Array<{kind:string;at:number}>=[];
+  await q.acquire(false);const start=Date.now();
+  const take=(kind:string)=>q.acquire(kind==='history',false,kind==='foreground',kind==='transaction',kind==='fence',kind==='submission')
+   .then(()=>seen.push({kind,at:Date.now()}));
+  const jobs=['foreground','transaction','fence','submission','history'].flatMap(kind=>Array.from({length:24},()=>take(kind)));
+  const expected=q.waitMs(true);jobs.push(take('history'));
+  for(let i=0;i<jobs.length;i++){t.mock.timers.tick(spacing);await Promise.resolve();}
+  await Promise.all(jobs);
+  const first=seen.findIndex(r=>r.kind==='history');
+  assert.equal(first,15,'Only one of seventeen dispatches goes to backfill while an admission waits');
+  const tail=seen.filter(r=>r.kind==='history').at(-1)!;
+  assert.equal(tail.at-start,expected,'The provider selector uses the actual dispatch policy');
+  assert(seen.every((r,i)=>!i||r.at-seen[i-1].at===spacing),'No extra provider throughput');
+  const gaps=seen.reduce<number[]>((a,r,i)=>{if(r.kind==='history')a.push(i);return a;},[]);
+  assert(gaps.every((n,i)=>!i||n-gaps[i-1]<=17),'Even saturated admissions cannot starve archive progress');
+  assert.deepEqual(q.pending(),{interactive:0,history:0});
  }
 });
