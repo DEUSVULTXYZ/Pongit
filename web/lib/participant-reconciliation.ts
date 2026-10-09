@@ -1,9 +1,17 @@
 export type ParticipantPose={
  paddles:[number,number]; halves:[number,number];
  contactBoundary?:boolean;
+ contactPaddles?:readonly [number,number];
  balls:{id:number;x:number;y:number;continuity:string;vx?:number}[];
 };
 const clamp=(n:number,a:number,b:number)=>Math.max(a,Math.min(b,n));
+function contacting(pose:ParticipantPose,side:0|1){
+ return !!pose.contactBoundary&&!!pose.contactPaddles&&pose.balls.some(b=>
+  Math.abs(b.x-(side===0?40:984))<.002&&(side===0?(b.vx??0)<0:(b.vx??0)>0));
+}
+function contactAligned(pose:ParticipantPose):ParticipantPose{
+ return {...pose,paddles:pose.paddles.map((y,i)=>contacting(pose,i as 0|1)?pose.contactPaddles![i]:y) as [number,number]};
+}
 type ParticipantSource={state:unknown;chaos?:unknown;clock:bigint;progressionLimit?:bigint;confirmedInputRevision?:number};
 export function participantSourceChanged(previous:ParticipantSource,current:ParticipantSource){
  return previous.state!==current.state||previous.chaos!==current.chaos||previous.clock!==current.clock
@@ -41,6 +49,7 @@ export class ParticipantReconciliation {
  private stoppedAt?:number;
  reset(){this.paddles=[0,0];this.balls.clear();this.ballPictures.clear();this.localDirection=0;this.stopCorrection=2;this.localPicture=undefined;this.stoppedAt=undefined;}
  sample(current:ParticipantPose,previous:ParticipantPose|undefined,elapsedMs:number,local?:{side:0|1;direction:number;speed?:number;motionMs?:number;motion?:readonly {direction:number;ms:number}[]}):ParticipantPose{
+  current=contactAligned(current);if(previous)previous=contactAligned(previous);
   const dt=clamp(elapsedMs,0,50);
   const released=!!local&&local.direction===0&&this.localDirection!==0;
   if(local&&local.direction!==this.localDirection){
@@ -93,6 +102,13 @@ export class ParticipantReconciliation {
     }
    }else this.paddles[side]=settle(this.paddles[side],dt,120);
    this.paddles[side]=clamp(current.paddles[side]+this.paddles[side],current.halves[side],576-current.halves[side])-current.paddles[side];
+   if(contacting(current,side)){
+    // Edge1529: the ball waited at the impact instant while this paddle moved
+    // 5px into its future. A genuine miss then looked like a traversal. Keep
+    // the contacting pair on one instant until live physics resolves it.
+    // Input transport continues; the other paddle remains immediately live.
+    this.paddles[side]=0;
+   }
   }
   const balls=current.balls.map(ball=>{
    let error=this.balls.get(ball.id);

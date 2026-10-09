@@ -8,6 +8,33 @@ import {initialChaosEvents} from '../shared/physics-chaos-events';
 import {zeroHash} from 'viem';
 const pose=(left=288,right=288,x=512,y=288):ParticipantPose=>({paddles:[left,right],halves:[48,48],balls:[{id:1,x,y,continuity:'0:0'}]});
 
+test('Edge1529 cannot move either paddle into a ball waiting in its past',()=>{
+ for(const side of [0,1] as const)for(const ball of [1,2]){
+  const view=new ParticipantReconciliation(),p=pose();
+  p.paddles[side]=side?104.88:383.37;
+  p.contactBoundary=true;p.contactPaddles=side?[288,113.62]:[376.1595,288];
+  p.balls=[{id:ball,x:side?983.999936:40.00012168,y:side?52:432.00007,vx:side?192:-211.2,continuity:'same'}];
+  const source=structuredClone(p);
+  for(let i=0;i<5;i++){
+   p.paddles[side]+=side?-4.8:4.8;
+   const shown=view.sample(p,undefined,16,{side,direction:side?-1:1,speed:300,motion:[{direction:side?-1:1,ms:16}]});
+   assert.equal(shown.paddles[side],p.contactPaddles[side]);
+   assert(Math.abs(shown.balls[0].y-shown.paddles[side])>54,'real miss stays visually outside the solid paddle');
+   assert.equal(shown.balls[0].x,source.balls[0].x,'never relocate the ball to fabricate a contact');
+  }
+ }
+});
+
+test('a remote contact does not delay the local paddle or resume an obsolete direction',()=>{
+ const view=new ParticipantReconciliation(),p=pose(288,104,983.99999,52);
+ p.contactBoundary=true;p.contactPaddles=[288,113];p.balls[0].vx=192;
+ view.sample(p,undefined,0,{side:0,direction:1,speed:300,motion:[]});
+ assert.equal(view.sample(p,undefined,16,{side:0,direction:1,speed:300,motion:[{direction:1,ms:16}]}).paddles[0],292.8);
+ const stopped=view.sample(p,undefined,0,{side:0,direction:0,speed:300,motion:[]});
+ const next={...p,contactBoundary:false};
+ assert(Math.abs(view.sample(next,p,16,{side:0,direction:0,speed:300,motion:[{direction:0,ms:16}]}).paddles[0]-stopped.paddles[0])<=2);
+});
+
 test('short input pulses integrate event time rather than accumulating RAF rounding',()=>{
  const view=new ParticipantReconciliation();let previous=0;
  const events=Array.from({length:100},(_,i)=>[{direction:(i%2?-1:1) as -1|1,at:5+i*130},{direction:0 as const,at:85+i*130}]).flat();

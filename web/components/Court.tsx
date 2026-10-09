@@ -19,6 +19,12 @@ import {SpectatorPlayout,visibleBall} from '../lib/spectator-playout';
 import {projectParticipant,projectChaosParticipant,type TimedControl,type HousePrediction} from '../lib/participant-projection';
 import {ParticipantReconciliation,participantContinuationTime,participantMotionMs,participantSourceChanged,type ParticipantPose} from '../lib/participant-reconciliation';
 import {localMotion,type LocalIntent,type ParticipantPresentationClock} from '../lib/participant-inputs';
+function contactAnchorPaddles(projection:object,unit:number):readonly [number,number]|undefined{
+ if(!('contactPaddles' in projection))return;
+ const values=projection.contactPaddles;
+ if(!Array.isArray(values)||values.length!==2||values.some(y=>typeof y!=='bigint'))return;
+ return [Number(values[0])/unit,Number(values[1])/unit];
+}
 function participantPose(state:State,chaos?:ChaosDecoded['physics']):ParticipantPose{
  const paddles=chaos?eventPaddles(chaos):null;
  return {paddles:[Number(state.left)/1e6,Number(state.right)/1e6],
@@ -157,14 +163,16 @@ export function Court({
       const timing=boundedClock(p.clock,anchorAge,now-anchor);
       let target=p.replay||playback?p.clock:p.liveEngine?liveClock.sample(timing.target,p.progressionLimit):timing.target;
       if(p.progressionLimit!==undefined&&target>p.progressionLimit)target=p.progressionLimit;
-      let waiting = false,pointBoundary=false,contactBoundary=false;
+      let waiting = false,pointBoundary=false,contactBoundary=false,contactPaddles:readonly [number,number]|undefined;
       let drawnBalls:{id:number;x:number;y:number}[]=[];
       const cp=p.chaos?(p.replay?{state:p.chaos.physics,collisions:[],waiting:false}:coherent?projectChaosParticipant(p.chaos.physics,target,p.coherentControls!,chaosContactResolution(p.rulesVersion??10),p.housePrediction,p.rulesVersion===17||p.rulesVersion===18):playback?spectatorChaos.sample(p.chaos.physics,target,chaosContactResolution(p.rulesVersion??10)):projectChaos(p.chaos.physics,target,p.rulesVersion===undefined?undefined:chaosContactResolution(p.rulesVersion))):null;
-      if(cp){contactBoundary='contactBoundary' in cp&&!!cp.contactBoundary;pointBoundary='pointBoundary' in cp&&!!cp.pointBoundary;s=chaosLegacy(cp.state,p.state?.finished);waiting=cp.waiting||timing.stale;}
+      if(cp){contactBoundary='contactBoundary' in cp&&!!cp.contactBoundary;pointBoundary='pointBoundary' in cp&&!!cp.pointBoundary;s=chaosLegacy(cp.state,p.state?.finished);waiting=cp.waiting||timing.stale;
+        contactPaddles=contactAnchorPaddles(cp,1e12);}
       else if (s) {
         const projected = p.replay ? { state: s, waiting: false }
           : coherent?projectParticipant(s,target,p.coherentControls!,p.housePrediction,p.rulesVersion===17||p.rulesVersion===18):p.liveEngine ? projectLive(s, target) : projectConfirmed(s, target);
         contactBoundary='contactBoundary' in projected&&!!projected.contactBoundary;
+        contactPaddles=contactAnchorPaddles(projected,1e6);
         pointBoundary='pointBoundary' in projected&&!!projected.pointBoundary;
         s = projected.state;
         waiting = projected.waiting || timing.stale;
@@ -186,11 +194,14 @@ export function Court({
             const old=projectChaosParticipant(previous.chaos.physics,oldTarget,previous.coherentControls!,chaosContactResolution(previous.rulesVersion??10),previous.housePrediction,previous.rulesVersion===17||previous.rulesVersion===18);
             before=participantPose(chaosLegacy(old.state,previous.state.finished),old.state);
             before.contactBoundary=old.contactBoundary;
+            if(old.contactPaddles)before.contactPaddles=old.contactPaddles.map(y=>Number(y)/1e12) as [number,number];
           }else{const old=projectParticipant(previous.state,oldTarget,previous.coherentControls!,previous.housePrediction,previous.rulesVersion===17||previous.rulesVersion===18);
-            before={...participantPose(old.state),contactBoundary:old.contactBoundary};}
+            before={...participantPose(old.state),contactBoundary:old.contactBoundary,
+              contactPaddles:old.contactPaddles?.map(y=>Number(y)/1e6) as [number,number]|undefined};}
         }
         const predictedPose=participantPose(s,cp?.state);
         predictedPose.contactBoundary=contactBoundary;
+        predictedPose.contactPaddles=contactPaddles;
         const motion=cp?eventPaddles(cp.state):null;
         const localSpeed=motion?Number(p.side===0?motion.speedA:motion.speedB)/1e6:Number(rulesPaddleSpeed(p.rulesVersion??0))/1e6;
         const responsive=p.rulesVersion===17||p.rulesVersion===18;

@@ -35,8 +35,11 @@ export function confirmedInputMetrics(intents:{at:number;direction:number}[],rec
 export function sustainedInputMetrics(data:{paddles?:any[];snapshots:any[];keys?:any[];releases?:any[];poses?:any[]}){
  const observations=new Map(data.snapshots.map(s=>[s.observedAt,s]));
  const displayedTime=new Map((data.poses??[]).map(p=>[p.at,BigInt(p.renderedUs)]));
+ const contacts=new Set<string>();
+ for(const p of data.poses??[])if(p.contactBoundary)for(const side of [0,1])
+  if(p.balls?.some((b:any)=>Math.abs(b.x-(side===0?40:984))<.002))contacts.add(`${p.at}:${side}`);
  const changes=[...(data.keys??[]),...(data.releases??[]).map(r=>({...r,direction:0}))].sort((a,b)=>a.at-b.at);
- const ratios:number[]=[],outliers:any[]=[],stops:any[]=[],excluded:Record<string,number>={};
+ const ratios:number[]=[],allRatios:number[]=[],outliers:any[]=[],stops:any[]=[],excluded:Record<string,number>={};
  // RAF's supplied time can precede a key event even when its callback paints
  // after that event. Use the actual canvas-call timestamp for input ownership;
  // retain RAF deltas for the renderer's integrated velocity calculation.
@@ -69,13 +72,17 @@ export function sustainedInputMetrics(data:{paddles?:any[];snapshots:any[];keys?
    if(velocities.some(v=>v===undefined)){reject('pause-or-unavailable');continue;}
    let expected=0;for(let k=1;k<window.length;k++)expected+=velocities[k-1]!*(window[k].at-window[k-1].at)/1000;
    if(expected>0){
-    const ratio=(b.y-a.y)*input.direction/expected;ratios.push(ratio);
+    const ratio=(b.y-a.y)*input.direction/expected;allRatios.push(ratio);
+    // The approved sustained-speed gate excludes collisions. Retain the raw
+    // values as well: a contact may never hide ordinary slow held movement.
+    if(window.some(p=>contacts.has(`${p.at}:${p.side}`))){reject('contact-confirmation');continue;}
+    ratios.push(ratio);
     if(ratio<.95||ratio>1.05)outliers.push({from:a.at,to:b.at,side:input.side,direction:input.direction,fromY:a.y,toY:b.y,expected,ratio});
    }
   }
  }
  const q=(values:number[],p:number)=>[...values].sort((a,b)=>a-b)[Math.floor((values.length-1)*p)];
- return{held:{samples:ratios.length,p05Ratio:q(ratios,.05),p95Ratio:q(ratios,.95),minRatio:ratios.length?Math.min(...ratios):undefined,maxRatio:ratios.length?Math.max(...ratios):undefined,
+ return{heldIncludingContacts:{samples:allRatios.length,p05Ratio:q(allRatios,.05),p95Ratio:q(allRatios,.95),outsideTarget:allRatios.filter(r=>r<.95||r>1.05).length},held:{samples:ratios.length,p05Ratio:q(ratios,.05),p95Ratio:q(ratios,.95),minRatio:ratios.length?Math.min(...ratios):undefined,maxRatio:ratios.length?Math.max(...ratios):undefined,
   outsideTarget:ratios.filter(r=>r<.95||r>1.05).length,outliers},stopping:{samples:stops.length,p95Drift:q(stops.map(s=>s.drift),.95),maxDrift:stops.length?Math.max(...stops.map(s=>s.drift)):undefined,stops},excluded};
 }
 

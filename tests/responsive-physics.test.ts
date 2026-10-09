@@ -55,6 +55,18 @@ test('whole-motion measurement rejects resistance that a first-pixel latency tes
  assert(sustainedInputMetrics(trace(180)).held.outsideTarget>0);
 });
 
+test('collision speed exclusions stay scoped to the contacting side and retain raw measurements',()=>{
+ const trace={snapshots:[{observedAt:0,rulesVersion:17,controllable:true}],keys:[{at:0,side:0,direction:1}],releases:[{at:600,side:0}],
+  paddles:Array.from({length:60},(_,i)=>{const at=i*10,y=100+.3*(at-Math.min(30,Math.max(0,at-130)));return{at,side:0,observedAt:0,y,top:y-48,bottom:y+48,height:96,rally:'1'};}),
+  poses:[130,140,150].map(at=>({at,renderedUs:String(at*1000),contactBoundary:true,balls:[{id:2,x:40.00001,y:200}]}))};
+ const m=sustainedInputMetrics(trace);
+ assert.equal(m.held.outsideTarget,0);assert.equal(m.heldIncludingContacts.outsideTarget,1);assert.equal(m.excluded['contact-confirmation'],1);
+ const wrong=structuredClone(trace);wrong.poses.forEach(p=>p.balls[0].x=983.99999);
+ assert.equal(sustainedInputMetrics(wrong).held.outsideTarget,1,'opponent contact cannot hide local resistance');
+ const unsupported=structuredClone(trace);unsupported.poses.forEach(p=>p.contactBoundary=false);
+ assert.equal(sustainedInputMetrics(unsupported).held.outsideTarget,1);
+});
+
 test('held speed measurement follows the displayed expiry of a Chaos speed effect',()=>{
  const physics=initialChaosEvents(zeroHash);
  physics.effects[0]={...physics.effects[0],id:2,target:0,startsAt:0,expiresAt:300};

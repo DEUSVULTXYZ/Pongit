@@ -54,7 +54,7 @@ function pointPaddles<T extends {t:bigint;left:bigint;right:bigint;leftDir:numbe
 export function projectParticipant(source:State,target:bigint,inputs:readonly TimedControl[],house?:HousePrediction,confirmContacts=false){
  let state={...source},waiting=false,pointBoundary=false,contactBoundary=false;
  const uncertain=confirmContacts||inputs.some(i=>i.confirmed===false&&i.at<=target);
- if(state.finished||state.awaitingServe)return {state,waiting:false};
+ if(state.finished||state.awaitingServe)return {state,waiting:false,contactPaddles:undefined};
  const end=target<state.t?state.t:target>state.t+600_000n?state.t+600_000n:target;
  const bot=predictor(house);
  const advance=(to:bigint)=>{
@@ -76,13 +76,14 @@ export function projectParticipant(source:State,target:bigint,inputs:readonly Ti
   state=steer(state,input);
  }
  advance(end);
+ const contactPaddles=contactBoundary?[state.left,state.right] as const:undefined;
  if(pointBoundary||contactBoundary)state=pointPaddles(state,end,inputs,[state.paddleSpeed??180_000_000n,state.paddleSpeed??180_000_000n],[state.halfA,state.halfB],1_000_000n);
- return {state,pointBoundary,contactBoundary,waiting:waiting||target>end};
+ return {state,pointBoundary,contactBoundary,contactPaddles,waiting:waiting||target>end};
 }
 
 export function projectChaosParticipant(source:ChaosPhysicsState,target:bigint,inputs:readonly TimedControl[],contacts:boolean|'complete',house?:HousePrediction,confirmContacts=false){
  let state=source;const collisions:ReturnType<typeof projectChaos>['collisions']=[];
- if(state.score.finished||state.cancelled)return {state,collisions,pointBoundary:false,waiting:false};
+ if(state.score.finished||state.cancelled)return {state,collisions,pointBoundary:false,waiting:false,contactPaddles:undefined};
  const end=target<state.t?state.t:target>state.t+600_000n?state.t+600_000n:target;
  let waiting=false,pointBoundary=false,contactBoundary=false;const bot=predictor(house);
  const uncertain=confirmContacts||inputs.some(i=>i.confirmed===false&&i.at<=target);
@@ -112,6 +113,7 @@ export function projectChaosParticipant(source:ChaosPhysicsState,target:bigint,i
   if(input.direction)state={...state,...(input.side===0?{lastLeft:input.direction}:{lastRight:input.direction})};
  }
  advance(end);
+ const contactPaddles=contactBoundary?[state.left,state.right] as const:undefined;
  if(pointBoundary||contactBoundary){const p=eventPaddles(state);state=pointPaddles(state,end,inputs,[p.speedA*1_000_000n,p.speedB*1_000_000n],[p.heightA*500_000n,p.heightB*500_000n],1_000_000_000_000n);}
- return {state,collisions,pointBoundary,contactBoundary,waiting:waiting||target>end};
+ return {state,collisions,pointBoundary,contactBoundary,contactPaddles,waiting:waiting||target>end};
 }
