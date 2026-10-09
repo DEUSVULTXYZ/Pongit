@@ -3,6 +3,8 @@ import type {Page} from '@playwright/test';
 import {eventPaddles} from '../web/lib/chaos-presentation';
 import {chaosOuterHalf} from '../shared/chaos-modifiers';
 
+const paintedAt=(frame:any)=>Number.isFinite(frame.paintedAt)&&frame.paintedAt>=frame.at?frame.paintedAt:frame.at;
+
 /** Same-host epoch timestamps include the browser's queued intent before send.
  * Receipt transport latency alone cannot qualify input-to-confirmation latency. */
 export function confirmedInputMetrics(intents:{at:number;direction:number}[],receipts:{sentAt?:number;confirmedAt?:number;direction?:number;sequence?:string;hash?:string}[],timings:{stage:string;command?:string;hash?:string;startedAt:number;ms:number;timeOrigin:number}[]=[]){
@@ -44,7 +46,6 @@ export function sustainedInputMetrics(data:{paddles?:any[];snapshots:any[];keys?
  // after that event. Use actual canvas-call times for both input ownership and
  // displayed speed. Chrome1571 painted one RAF5.6ms late: RAF time invented
  // 5.29% excess speed although displacement followed actual time exactly.
- const paintedAt=(frame:any)=>Number.isFinite(frame.paintedAt)&&frame.paintedAt>=frame.at?frame.paintedAt:frame.at;
  const reject=(reason:string)=>{excluded[reason]=(excluded[reason]??0)+1;};
  const speed=(frame:any)=>{const s=observations.get(frame.observedAt);
   if(!s||!s.controllable||(s.pause?.status??0)>=2)return;
@@ -212,7 +213,10 @@ export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];wa
  const poses=new Map((data.poses??[]).map(p=>[p.at,p]));
  for(const b of data.paddles??[]){
   const a=last.get(b.side);last.set(b.side,b);if(!a||a.finished||b.finished||a.rally!==b.rally)continue;
-  const dt=b.at-a.at;if(dt<=0||dt>50)continue;
+  // Classic1595: an immediate input paint preceded a delayed RAF callback.
+  // RAF labels were .4ms apart, actual paints8ms apart;2.31 units is ordinary
+  // 300u/s motion. Keep the same jump limit, using its real displayed interval.
+  const dt=paintedAt(b)-paintedAt(a);if(dt<=0||dt>50)continue;
   const snapshot=byObservation.get(b.observedAt);let speed=Number(rulesPaddleSpeed(snapshot?.rulesVersion??0))/1e6;
   let confirmedHalf=Number(snapshot?.state?.[b.side===0?'halfA':'halfB'])/1e6;
   if(snapshot?.chaos){

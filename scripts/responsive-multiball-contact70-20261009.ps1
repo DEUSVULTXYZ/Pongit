@@ -1,7 +1,7 @@
 $ErrorActionPreference='Stop'
 $report='artifacts/responsive-20261008-r2/multiball-contact70.json'
 if(Test-Path -LiteralPath $report){throw 'Preserve the original multiball qualification'}
-$normal=Get-Content -Raw 'artifacts/responsive-20261008-r2/final-browser-series-70.json' | ConvertFrom-Json
+$normal=Get-Content -Raw 'artifacts/responsive-20261008-r2/normal-contact71.json' | ConvertFrom-Json
 $human=Get-Content -Raw 'artifacts/responsive-20261008-r2/pvp-contact70.json' | ConvertFrom-Json
 if(!$normal.passed -or !$human.passed){throw 'Complete the normal agent and human browser series first'}
 $web=& ssh pongit docker inspect --format '{{.Image}}' pongit-arcade-five-arcade-web-1

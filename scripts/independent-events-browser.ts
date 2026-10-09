@@ -13,6 +13,8 @@ import {installSyncProbe,syncMetrics,sustainedInputMetrics} from './browser-sync
 import {visibleAim} from './browser-aim';
 import {browserQualificationBarrier} from './browser-qualification-barrier';
 import {deliveryEvidence} from './browser-delivery-evidence';
+import {collisionIntegrity} from './collision-integrity-metrics';
+import {paddleCrossings} from './paddle-crossing-metrics';
 assert.equal(process.env.ROOMS_BROWSER_TEST,'isolated-vps');
 const publicRelease=process.env.PONG_HUMAN_BROWSER_TARGET==='public-release';
 const chaos=process.env.INDEPENDENT_SCENARIO==='chaos';
@@ -393,7 +395,9 @@ try{
 }finally{driving=false;clearInterval(progress);
  if(process.env.PONG_SYNC_PROBE==='1')for(let i=0;i<pages.length;i++){
   const trace=await pages[i].evaluate(()=>(window as any).__syncProbe).catch(()=>null);
-  if(trace){await writeFile(`${out}/sync-${i}.json`,JSON.stringify(trace));report.sync??=[];report.sync[i]=syncMetrics(trace);report.sustained??=[];report.sustained[i]=sustainedInputMetrics(trace);}
+  if(trace){await writeFile(`${out}/sync-${i}.json`,JSON.stringify(trace));report.sync??=[];report.sync[i]=syncMetrics(trace);report.sustained??=[];report.sustained[i]=sustainedInputMetrics(trace);
+   report.collisions??=[];report.collisions[i]=collisionIntegrity(trace.poses??[],trace.snapshots??[]);
+   report.paddleCrossings??=[];report.paddleCrossings[i]=paddleCrossings(trace.poses??[],trace.paddles??[],trace.snapshots??[]);}
  }
  const p95=(a:number[])=>a.sort((x,y)=>x-y)[Math.floor((a.length-1)*.95)];
  const paired=report.commandReceipts.map((r:any)=>{const e=report.liveControls.find((x:any)=>x.observer===1-r.player&&x.id===r.id&&x.side===r.side&&x.sequence===r.sequence);return e?e.receivedAt-r.sentAt:undefined;}).filter((v:any)=>Number.isFinite(v));
@@ -405,6 +409,7 @@ try{
   report.integrityGates=[0,1].map(player=>{const s=report.sustained?.[player],scenarios=report.inputScenarios.filter((v:any)=>v.player===player);
    const count=(name:string)=>scenarios.filter((v:any)=>v.scenario===name).length;
    return{held:s?.held.samples>=20&&s.held.outsideTarget===0,release:s?.stopping.samples>=3&&s.stopping.p95Drift<=2&&s.stopping.maxDrift<=6,
+    collisions:report.collisions?.[player]?.samples>100&&report.collisions[player].unconfirmed.length===0&&report.paddleCrossings?.[player]?.throughPaddle.length===0,
     scenarios:count('held')>=4&&count('rapid-reversal')>=4&&count('aim-centre')>=5&&count('aim-edge')>=5&&count('release-at-contact')>=1};});
   if(!report.integrityGates.every((v:any)=>Object.values(v).every(x=>x===true))){report.passed=false;report.error??='PvP held-input/release qualification failed';process.exitCode=1;}
  }

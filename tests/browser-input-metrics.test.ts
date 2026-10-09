@@ -60,6 +60,18 @@ test('confirmed input includes the unsent queue and both sides of F5',()=>{
  assert.equal(value.samples,3);assert.equal(value.maxMs,515);assert.deepEqual(value.mismatches,[]);
 });
 
+test('1595 discontinuity uses actual paints after an immediate input microtask',()=>{
+ const paddles=[
+  {at:25363.60000014305,paintedAt:25364.10000014305,integratedAt:25363.60000014305,y:348,height:96,rally:'1:3',side:0,observedAt:1},
+  {at:25364,paintedAt:25372.10000014305,integratedAt:25371.300000190735,y:345.6899999856949,height:96,rally:'1:3',side:0,observedAt:1}];
+ const snapshots=[{at:25331,observedAt:1,rulesVersion:17,clock:'15300000',state:{t:'15300000',left:'348000000',halfA:'48000000'}}];
+ assert.equal(syncMetrics({frames:[],snapshots,paddles}).paddleJumps.length,0);
+ const jumped=structuredClone(paddles);jumped[1].y=330;
+ assert.equal(syncMetrics({frames:[],snapshots,paddles:jumped}).paddleJumps.length,1,'Real jumps still fail with actual paint times');
+ const unmeasured=paddles.map(({paintedAt,...p})=>p);
+ assert.equal(syncMetrics({frames:[],snapshots,paddles:unmeasured}).paddleJumps.length,1,'No inferred paint delay without evidence');
+});
+
 test('1581 wall growth preserves a diminishing visual offset without inventing rollback',()=>{
  for(const bottom of [false,true]){
   const y=(v:number)=>bottom?576-v:v;
@@ -84,7 +96,8 @@ test('1322 known small-paddle expiry needs exact geometry and prompt live confir
  const before={at:100,observedAt:100,rulesVersion:17,clock:'46490000',state:{id:'1322',t:'46490000',left:'38400000',scoreA:1,scoreB:2},
   chaos:{physics:{t:'46490000',bettingA:96000000,bettingB:96000000,effects:[{...none,id:7,serial:3,startsAt:40500,expiresAt:46500},none]}}};
  const after={...structuredClone(before),at:150,observedAt:150,state:{...before.state,t:'46540000',left:'48000000'},chaos:{physics:{...before.chaos.physics,t:'46540000',effects:[none,none]}}};
- const d={frames:[],snapshots:[before,after],paddles:[{at:80,paintedAt:80,y:38.4,height:76.8,rally:'8',side:0,observedAt:100},
+ // Keep the synthetic9.6-unit clamp above the ordinary18ms motion budget.
+ const d={frames:[],snapshots:[before,after],paddles:[{at:80,paintedAt:82,y:38.4,height:76.8,rally:'8',side:0,observedAt:100},
   {at:97,paintedAt:100,y:48,height:96,rally:'8',side:0,observedAt:100}]};
  const metrics=syncMetrics(d);assert.equal(metrics.paddleJumps.length,0);assert.equal(metrics.geometryClamps[0].scheduledConfirmation.delayMs,50);
  for(const change of [
