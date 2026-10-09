@@ -1,9 +1,11 @@
 $ErrorActionPreference='Stop'
 $report='artifacts/responsive-20261008-r2/multiball-contact73.json'
 if(Test-Path -LiteralPath $report){throw 'Preserve the original multiball qualification'}
-$normal=Get-Content -Raw 'artifacts/responsive-20261008-r2/final-browser-series-73.json' | ConvertFrom-Json
+# Web67 changes only IndependentHub input wiring. The unchanged agent renderer
+# retains the complete series72 proof; PvP must pass again on web67.
+$normal=Get-Content -Raw 'artifacts/responsive-20261008-r2/final-browser-series-72.json' | ConvertFrom-Json
 $human=Get-Content -Raw 'artifacts/responsive-20261008-r2/pvp-contact73.json' | ConvertFrom-Json
-if(!$normal.passed -or !$human.passed){throw 'Complete the normal agent and human browser series first'}
+if(!$normal.passed -or $normal.web -ne '5b9e6e4' -or $normal.completed.Count -ne 7 -or !$human.passed -or $human.web -ne 'bea0e24'){throw 'Complete the normal agent and human browser series first'}
 $web=& ssh pongit docker inspect --format '{{.Image}}' pongit-arcade-five-arcade-web-1
 if($LASTEXITCODE -ne 0 -or $web.Trim() -ne 'sha256:d45f3c2de3248a3702b005698ae167806e53f27e1e698bbfbc47eaa82b8f7a2c'){throw 'Candidate web changed'}
 $env:PONG_CATALOGUE_RECEIPT_PROBE='read-only'

@@ -12,7 +12,7 @@ The stronger actual-paint timing check then detected another real defect in matc
 
 ## Validation status
 
-The candidate passed 1,250 TypeScript tests, root type checking, the Linux web build and the secret scan. The new headed production series starts with the Classic scenario that reproduced match 1597, followed by five Chaos games and another Classic game. PvP and additional naturally drawn multiball coverage are separate gates. These are ongoing; unit tests and a successful deployment are not end-to-end qualification.
+The candidate passed 1,250 TypeScript tests, root type checking, the Linux web build and the secret scan. Headed production series 72 passed all seven natural games: five Chaos against NOVA and two Classic. All reported zero pauses, abnormal resynchronizations, unconfirmed paddle bounces and painted paddle crossings. These games did not draw multiball, so that specific coverage remains a separate gate. See the [seven-game evidence](responsive-series72-20261009.json).
 
 All previous failed reports, videos and traces remain intact. Earlier series 70 results must not be presented as complete validation: the stronger paint-time check found a previously hidden remote jump in match 1585. The isolated observer-delay failure in match 1576 remains unresolved and was not reproduced by the independent read-only wire probe. No final 24-hour qualification has started.
 
@@ -25,3 +25,11 @@ Backup `backup-entry-66` contains five databases and the runtime configuration: 
 The immediate service rollback is web65, image `sha256:a77553468d9ccd77922be179a4f8cce3683071d311866d2fca89aabcaf7da8cc`. Revert only the web image in the canonical Compose file and its recorded mirror, after an idle boundary. Do not restore an old database or erase subsequent results and journals. That rollback retains the known old frame-timing limitation.
 
 The scheduled automation remains disabled. Browser passkeys and mobile interactions in these tests are virtual/emulated, not physical-device evidence.
+
+## PvP regression and compatible follow-up
+
+The same stricter test failed in natural Classic PvP, with 40.2-unit and 22.66-unit local contact corrections. `IndependentHub` was not wired to the event-time local-input ledger already used by Agent Arcade. It still rounded local motion to frames. Commit `bea0e243c3703a2bdf72375cb633ee52d6aef82e` connects its input events, retained local history and immediate paint subscription. This changes only the PvP component; the tested agent rendering code is unchanged. The [original failed measurement](responsive-pvp72-20261009.json) remains intact.
+
+Web67 was deployed at 14:09:50 UTC: `sha256:d45f3c2de3248a3702b005698ae167806e53f27e1e698bbfbc47eaa82b8f7a2c`. The guard waited for natural completion and confirmed idle block 69559404, hash `0x02cb29f91ab42771d7bffed13d2fa009cf170e75a50e2355d8ffafeef4ad0d2e`. All backend services, contracts, delegations and nonce authorities are unchanged. Forty-five focused tests, root type checking, the Linux build and secret scan passed. PvP73 is running; no passing result is inferred from deployment.
+
+Backup67 contains five databases and runtime configuration, 343,304,459 bytes, verified off VPS at 14:07:57 UTC, manifest `ae8da63152ed070b2143f9d0076e38f21dcb9d4aa6574c1d55a2476e55c6080c`. Its immediate rollback is web66 (`ec309447...`), using the same service-only procedure. Retain all data written since backup.
