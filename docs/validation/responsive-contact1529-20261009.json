@@ -1,0 +1,139 @@
+{
+  "ref": {
+    "app": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23",
+    "epoch": "1",
+    "id": "1529"
+  },
+  "passed": false,
+  "error": "A painted ball crossed the solid part of a painted paddle",
+  "result": {
+    "hash": "0xeb8e11d36a7231fa0e7d239db6cf101ad68fb00faac95f31ef097058fdd095a5",
+    "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+    "status": 3,
+    "scoreA": 5,
+    "scoreB": 7,
+    "elapsedUs": "54614594",
+    "finality": false
+  },
+  "naturalGates": {
+    "noPause": true,
+    "noResume": true,
+    "noResync": true,
+    "peer": true,
+    "player": true,
+    "spectator": true,
+    "executionClock": true
+  },
+  "reportSha256": "f4bae4bb3b6c1da1b9b3359fb52e2549ef167b1fab5a418f7846553a10cb728f",
+  "traceSha256": "433baedacb158414435dc7a43f35486b883ea45918b092e98b29cb0d526b7007",
+  "crossings": [
+    {
+      "at": 22659.80243286353,
+      "ball": 1,
+      "side": 0,
+      "rally": "3",
+      "y": 432.0000704,
+      "paddle": 383.3707298876716,
+      "height": 96,
+      "split": false,
+      "penetration": 5.37065948767156,
+      "throughPaddle": true
+    },
+    {
+      "at": 56759.80074708031,
+      "ball": 1,
+      "side": 1,
+      "rally": "9",
+      "y": 52.00000000000005,
+      "paddle": 104.88758433438335,
+      "height": 96,
+      "split": false,
+      "penetration": 1.1124156656167017,
+      "throughPaddle": true
+    }
+  ],
+  "causes": [
+    {
+      "side": 0,
+      "before": {
+        "at": 22659.8,
+        "sourceUs": "12260000",
+        "renderedUs": "12323865",
+        "contactBoundary": true,
+        "paddles": [
+          383.3700000286101,
+          317.99999999999983
+        ],
+        "balls": [
+          {
+            "id": 1,
+            "x": 40.000121688230315,
+            "y": 432.00000955588484
+          }
+        ]
+      },
+      "after": {
+        "at": 22676.5,
+        "sourceUs": "12340000",
+        "renderedUs": "12352000",
+        "contactBoundary": false,
+        "paddles": [
+          388.3800000429152,
+          317.99999999999983
+        ],
+        "balls": [
+          {
+            "id": 1,
+            "x": 39.164812424032085,
+            "y": 432.41766418798386
+          }
+        ]
+      },
+      "paddleAtContactUs": 376.1595,
+      "apparentFuturePaddleY": 383.3700000286101,
+      "extraFutureTravel": 7.210500028610113
+    },
+    {
+      "side": 1,
+      "before": {
+        "at": 56759.8,
+        "sourceUs": "46210000",
+        "renderedUs": "46281259",
+        "contactBoundary": true,
+        "paddles": [
+          110.82000002861024,
+          104.88780230545474
+        ],
+        "balls": [
+          {
+            "id": 1,
+            "x": 983.9999360972372,
+            "y": 52.00003195138145
+          }
+        ]
+      },
+      "after": {
+        "at": 56776.4,
+        "sourceUs": "46320000",
+        "renderedUs": "46324000",
+        "contactBoundary": false,
+        "paddles": [
+          115.65,
+          100.04452141655321
+        ],
+        "balls": [
+          {
+            "id": 1,
+            "x": 985.419844839483,
+            "y": 51.290077580258625
+          }
+        ]
+      },
+      "paddleAtContactUs": 113.6223,
+      "apparentFuturePaddleY": 104.88780230545474,
+      "extraFutureTravel": -8.734497694545254
+    }
+  ],
+  "fix": "Retain paddle coordinates at the unresolved contact instant and draw the contacting pair on that instant. Keep input transport running and the unrelated local paddle responsive. Do not move a ball or fabricate a hit.",
+  "measurement": "Keep original FAIL unchanged. Held-speed comparisons exclude only identified collisions as specified by the approved plan; publish raw including-contact values as well."
+}

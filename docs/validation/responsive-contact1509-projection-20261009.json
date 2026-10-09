@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "kind": "recorded-state presentation regression; not browser or user-local evidence",
+  "ref": {
+    "chainId": 10143,
+    "app": "0x776f35918da25f0b594fea72911dde5efc93e48e",
+    "epoch": "1",
+    "id": "1509"
+  },
+  "replaySha256": "2b9481cffe4b8b6228f45258e1a0c78c0142b0daefd034d2377f6f5b93b95370",
+  "sourceUs": "13630000",
+  "targetUs": "13750000",
+  "firstFenceUs": "13689310",
+  "firstFence": [
+    {
+      "ball": 1,
+      "x": 40.00006208,
+      "y": 235.9999248,
+      "vx": -232.32
+    },
+    {
+      "ball": 2,
+      "x": 40.00006208,
+      "y": 279.219576,
+      "vx": -232.32
+    }
+  ],
+  "confirmedContinuationUs": "13750000",
+  "predictedMissWaits": true,
+  "simultaneousSecondBallWaits": true,
+  "confirmedFirstMissSecondBounce": true,
+  "initialFailedAudit": "Incorrectly assumed sequential rather than simultaneous plane contacts; failure retained in artifacts."
+}

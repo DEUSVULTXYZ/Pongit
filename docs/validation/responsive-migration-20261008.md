@@ -1760,3 +1760,24 @@ Headed Chrome1512 baseline completed naturally7-6, no pause/resync, but peer rec
 Follow-up product cd3fe279afa0c12e9651ea0ed53bdc586f8dbd94 published: input-task paint, at most two units correction per stop, no held velocity subtraction. 1234 full TS tests and root TS pass; Linux web59 build/import pass, not yet deployed. Fresh backup59 actual five database endpoints passed, offVPS transfer session98224 running. No browser/game driver active. Latest public web still58. New image sha256:9e17a27214a6f18f765af5c0cfc8a7df02337d790e67a80fbf9ce4c0caba1cbf. No engine/contract/nonce/lifecycle changes, automation remains paused.
 
 Scoped offloads backup57 payloads and duplicate web58 upload verified locally before remote unlink; all Docker mounts checked, Docker/rollback images untouched; disk79.9717 before build. Backup59 manifestbe5bbba7aa63a00d548eca90dc1de3e5d74414ece359ac4fc9de50491a5a8d54,326270883bytes. Preserve baseline and1519 FAIL; neither is final release qualification. Next guarded idle web59 cutover after OFFVPS proof, actual Chrome/Edge complete Chaos, multiball and release/crossing checks.
+
+
+## 2026-10-09 11:04 UTC - web59 deployed, natural browser1527 running
+
+Guarded web-only cutover59 PASS11:03:36, web cd3fe27 started11:03:33.907219512Z; image9e17a27214a6f18f765af5c0cfc8a7df02337d790e67a80fbf9ce4c0caba1cbf. Canonical69522847/hash921f6be5dab04082f3183da2e5eeab22fa8589c1d6a2e60f9e44ae015655c33e, idle seven slots/human0/pending0; all services resumed. Backup59 offVPS verified11:00:51,6files326270883bytes, manifestbe5bbba7aa63a00d548eca90dc1de3e5d74414ece359ac4fc9de50491a5a8d54. Previous web58 retained for rollback without database restore.
+
+Sole headed Chrome driver92961 r2contact59-chrome1 admitted natural Chaos1527 on264 epoch1, reusing owned virtual Mera authorization. No results claimed before completion. Recorded1509 projection proof now independently verifies both simultaneous planes13.689310s: firstmiss/secondbounce await one live decision; initial audit wrongly expected sequential contacts and remains failed separately. No product change for this audit assumption.
+
+
+## 2026-10-09 11:20 UTC - actual contact failure reproduced, web60 building
+
+Chrome1527 on web59 PASS natural7-6, input15.8ms p95, send16ms, observer11.89ms, release1.12p95/4.01max, no pauses/resync/traversals. Edge1529 natural5-7 FAIL: two genuine painted-paddle traversals, player penetration5.37units and bot1.11. Original report/video/trace retained. Data proves ball held at contact while contacting paddle continued into future: left physical376.1595 at12.323865s versus painted383.37; right113.6223 versus104.89 at46.281259s. No network/contract pause/NodeBusy problem in this fixture. Public evidence responsive-contact1529-20261009.json.
+
+Product7d61aac published, not yet deployed: keep the contacting pair at the same contact instant until live resolution, never relocate the ball or fabricate a hit; input transport and other-side local movement continue. Anchors also used across receipt reconstruction. 1237TS pass; first rootTS union inference error retained, repaired rootTS pass. Collision-exempt held-speed measurement now also retains raw values; no ordinary movement excluded. Web60 Linux build exec53291 running. Public stillweb59.
+
+No driver/lifecycle worker active. Web60 install/cutover prepared using still-fresh verified backup59 (11:00:51), with strict30min freshness gate and idle boundary. Do not extend guard if expired: refresh instead. Scoped backup58 and duplicateweb59 upload offloaded with SHA/mount checks. Five unreferenced web35/48/50/51/53 images removed only after verifying local archives/OCI index/source and checking allcontainers; current59 and rollback58/57 retained. Disk79.3725beforebuild. Actual rollback archives/volumes/history intact. No 24h delivery claim.
+
+
+## 2026-10-09 11:22 UTC - web60 live, Edge retry running
+
+Web60 7d61aac started11:21:13.932743268Z, imageb2d862ad7d0c8056df2e40e78dedd614bfb744bffe2b8144f3590216745531d6. Guarded cutoverPASS11:21:16 afteridlecanonical69526302/edd...e46e, all seven slots empty, bothhuman0, pending0. Backup59stillfresh verified11:00:51. Onlyweb changed; no engine/contract/delegation action. Rollbackweb59 retained, neverrestoreoldDB. Soleactualdriver exec23711 r2contact60-edge1 running, original seven-minute natural bound. Do not start competing driver. Product7d61aac/rootTS1237tests/build/secret checks pass; full actual qualification pending.
