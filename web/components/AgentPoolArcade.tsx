@@ -136,7 +136,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   if(m.challengeAdmission==='atomic-v1'&&operation?.status==='confirmed'&&operation.hash){
    try{const entry=await readChallengeEntry(poolBase(),m,operation.hash,s.grant.player,{agent,mode});
     if(entry&&!document.hidden){
-     if(entry.view)agentEntryHandoff.put(m,entry.view,s.grant.player);
+     if(entry.view)agentEntryHandoff.put(m,entry.view,s.grant.player,entry.observation);
      enterMatch(entry.ref);return;
     }
    }catch{/* The saved action is confirmed; resume observation, never resubmit. */}

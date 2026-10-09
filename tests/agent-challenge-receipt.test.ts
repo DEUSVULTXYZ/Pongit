@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {encodeAbiParameters,encodeEventTopics,keccak256,zeroHash,type Address,type Hex,type PublicClient,type TransactionReceipt} from 'viem';
+import {encodeAbiParameters,encodeEventTopics,encodeFunctionResult,keccak256,zeroHash,zeroAddress,type Address,type Hex,type PublicClient,type TransactionReceipt} from 'viem';
+import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
+import {usableEntryObservation} from '../shared/agent-entry-observation';
 import {agentChallengesAbi} from '../shared/abi-AgentChallenges';
 import {reusableAgentPoolAbi} from '../shared/abi-ReusableAgentPool';
 import {challengeRefFromReceipt,readChallengeAdmission,challengeViewFromReceipt,readChallengeEntry} from '../shared/agent-challenge-receipt';
@@ -95,4 +98,32 @@ test('entry handoff is one-use, participant/ref scoped, immutable and short live
  for(const bad of [{...view,ranked:true},{...view,tournament:'1'},{...view,currentBinding:false},{...view,node:null}]){
   handoff.put(hydrated,bad,player);assert.equal(handoff.take(view.ref,player),null);
  }
+});
+
+test('entry overlaps pinned checks with the canonical receipt and charges block age and read latency',async()=>{
+ const current:AgentPoolManifest={...hydrated,hub:NO_LEASE_HUB,rulesVersion:17,arenas:[{...hydrated.arenas[0],runtimeHash:keccak256('0x6000')}]};
+ const liveReceipt=()=>receipt([changed(),admission(binding,{...ticket,rules:17n}),assigned()]);
+ const fields=roomsLifecycleHubAbi.find(x=>x.name==='delegationOf')!.outputs[0].components;
+ const hub:any=Object.fromEntries(fields.map(f=>[f.name,f.type==='address'?zeroAddress:f.type==='bytes32'?zeroHash:['uint8','uint16','uint32'].includes(f.type)?0:0n]));
+ Object.assign(hub,{status:1,epoch:12n,expiresAt:0n});
+ let clock=100500,canonical=blockHash,readFailure=false,code='0x6000' as Hex,chainId=10143;
+ let release!:()=>void;const gate=new Promise<void>(r=>release=r),started=new Set<string>();
+ const client={getTransactionReceipt:async()=>liveReceipt(),getBlock:async()=>{started.add('header');await gate;return{hash:canonical,timestamp:100n};},
+  getChainId:async()=>{started.add('chain');await gate;return chainId;},
+  getCode:async(r:any)=>{assert.equal(r.blockHash,blockHash);assert.equal(r.requireCanonical,true);started.add('code');await gate;return code;},
+  request:async(r:any)=>{assert.deepEqual(r.params[1],{blockHash,requireCanonical:true});started.add('hub');await gate;if(readFailure)throw Error('canonical read unavailable');return encodeFunctionResult({abi:roomsLifecycleHubAbi,functionName:'delegationOf',result:hub});}} as unknown as PublicClient;
+ const pending=readChallengeEntry(client,current,hash,player,expected,()=>clock);
+ await new Promise(r=>setImmediate(r));assert.deepEqual([...started].sort(),['chain','code','header','hub']);clock+=400;release();
+ const entry=(await pending)!;assert(entry.observation);assert.equal(entry.observation.observedAt,100500);assert.equal(entry.observation.validUntil,103000);
+ assert(usableEntryObservation(entry.observation,current,entry.ref,102999));
+ assert.equal(usableEntryObservation(entry.observation,current,entry.ref,103000),null,'Navigation cannot restart validity');
+ for(const changed of [{...entry.observation,validUntil:104000},{...entry.observation,observedAt:102000},{...entry.observation,chainId:1},
+  {...entry.observation,ref:{...entry.ref,id:'240'}},{...entry.observation,hub:addr(99)},{...entry.observation,runtimeHash:zeroHash},
+  {...entry.observation,delegation:{...entry.observation.delegation,status:2}}])assert.equal(usableEntryObservation(changed,current,entry.ref,100900),null);
+ readFailure=true;assert.equal((await readChallengeEntry(client,current,hash,player,expected,()=>clock))?.observation,undefined);readFailure=false;
+ code='0x6001';assert.equal((await readChallengeEntry(client,current,hash,player,expected,()=>clock))?.observation,undefined);code='0x6000';
+ chainId=1;assert.equal((await readChallengeEntry(client,current,hash,player,expected,()=>clock))?.observation,undefined);chainId=10143;
+ clock=103001;assert.equal((await readChallengeEntry(client,current,hash,player,expected,()=>clock))?.observation,undefined);
+ clock=99000;assert.equal((await readChallengeEntry(client,current,hash,player,expected,()=>clock))?.observation,undefined,'Future block times do not extend the fence');
+ canonical=zeroHash;assert.equal(await readChallengeEntry(client,current,hash,player,expected,()=>clock),null);
 });

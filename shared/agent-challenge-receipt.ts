@@ -3,6 +3,9 @@ import {agentChallengesAbi} from './abi-AgentChallenges';
 import {reusableAgentPoolAbi} from './abi-ReusableAgentPool';
 import type {AgentPoolManifest,PoolMatchView} from './agent-pool';
 import type {AgentMatchRef} from './agents';
+import {readHubDelegation} from './rooms-hub';
+import {hubHasNoLease} from './hub-lease';
+import {usableEntryObservation,type AgentEntryObservation} from './agent-entry-observation';
 
 /** Resolve only this player's accepted challenge. The pool may admit an older
  * request in the same transaction, so an Assigned event alone is insufficient.
@@ -66,11 +69,26 @@ export function challengeViewFromReceipt(m:AgentPoolManifest,receipt:Transaction
 }
 
 export async function readChallengeEntry(client:PublicClient,m:AgentPoolManifest,hash:Hex,player:Address,
- expected:{agent:Address;mode:0|1},now=Date.now()):Promise<{ref:AgentMatchRef;view:PoolMatchView|null}|null>{
+ expected:{agent:Address;mode:0|1},clock:number|(()=>number)=Date.now):Promise<{ref:AgentMatchRef;view:PoolMatchView|null;observation?:AgentEntryObservation}|null>{
  if(m.version!==5)return null;
  const receipt=await client.getTransactionReceipt({hash});if(receipt.transactionHash!==hash)return null;
  const ref=challengeRefFromReceipt(m,receipt,player,expected);if(!ref)return null;
- const block=await client.getBlock({blockNumber:receipt.blockNumber});if(block.hash!==receipt.blockHash)return null;
- const age=now-Number(block.timestamp)*1000;
- return{ref,view:age>=-5000&&age<=30000?challengeViewFromReceipt(m,receipt,player,expected):null};
+ const now=typeof clock==='function'?clock:()=>clock,started=now();
+ const arena=m.arenas.find(a=>a.app.toLowerCase()===ref.app.toLowerCase())!;
+ const pin={blockHash:receipt.blockHash,requireCanonical:true as const};
+ // The receipt hash is already known: lifecycle/code can overlap its canonical
+ // header check. A failed optional preload leaves the ordinary recovery path;
+ // it never authorizes a command or creates a replacement challenge.
+ const preload=m.rulesVersion===17&&hubHasNoLease(m.hub,0n)?Promise.all([
+  client.getChainId(),readHubDelegation(client,m.hub,ref.app,pin),client.getCode({address:ref.app,...pin}),
+ ]).catch(()=>null):Promise.resolve(null);
+ const [block,loaded]=await Promise.all([client.getBlock({blockNumber:receipt.blockNumber}),preload]);
+ if(block.hash!==receipt.blockHash)return null;
+ const age=now()-Number(block.timestamp)*1000,view=age>=-5000&&age<=30000?challengeViewFromReceipt(m,receipt,player,expected):null;
+ const candidate:AgentEntryObservation|undefined=loaded&&loaded[2]?{
+  ref,hub:m.hub,runtimeHash:keccak256(loaded[2]),blockHash:block.hash!,timestamp:block.timestamp,
+  observedAt:started,validUntil:Math.min(started+3000,Number(block.timestamp)*1000+3000),chainId:loaded[0],delegation:loaded[1],
+ }:undefined;
+ const observation=view?usableEntryObservation(candidate,m,ref,now()):null;
+ return{ref,view,...(observation?{observation}:{})};
 }

@@ -10,6 +10,7 @@ import type {AgentPoolManifest,PoolMatchView} from '../shared/agent-pool';
 import type {PoolFamilySession} from '../shared/agent-pool-family';
 import {poolRenewTypes,poolRevokeTypes} from '../shared/agent-pool-active';
 import {NO_LEASE_HUB} from '../shared/hub-lease';
+import type {AgentEntryObservation} from '../shared/agent-entry-observation';
 const addr=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 test('rules16 heartbeats require fresh perception, preserve pending nonces and select resume explicitly',async()=>{
  const f=fixture(16);
@@ -187,8 +188,8 @@ function fixture(rules:10|11|15|16|17=10,onTiming?:(s:PoolPlayerTiming)=>void){
  }};
  const feed:any={peek:()=>state,read:async()=>state,forCommand:async()=>state,receipt:async()=>state,invalidate(){},watch:()=>()=>{}};
  state.observedAt=clock;
- const create=()=>player=createPoolPlayer(m,match,session,{base,storage,now:()=>clock,onTiming,socket:()=>{throw Error('No fixture WebSocket');}},{node,feed});create();
- return{m,match,session,owner,player,create,hub,state,sent,storage,binding,base,node,feed,
+ const create=(entryObservation?:AgentEntryObservation)=>player=createPoolPlayer(m,match,session,{base,storage,now:()=>clock,entryObservation,onTiming,socket:()=>{throw Error('No fixture WebSocket');}},{node,feed});create();
+ return{m,match,session,owner,player,create,hub,state,sent,storage,binding,base,node,feed,clock:()=>clock,
   lost:(v:boolean)=>lost=v,visible:(v:boolean)=>receiptVisible=v,epoch:(v:number)=>nodeEpoch=v,calls:()=>nodeCalls,hold:(v?:()=>Promise<void>)=>hold=v,
   advance:(ms:number)=>{clock+=ms;},fresh:()=>{state.observedAt=clock;},bindings:()=>bindings,nonceReads:()=>nonceReads,
   reject:(name:'InvalidMatch'|'StaleInput',phase:number)=>{rejectName=name;rejectPhase=phase;},
@@ -596,6 +597,60 @@ test('entry reads code and lifecycle at one canonical hash without trailing head
  assert.deepEqual(requests,[{blockHash:zeroHash,requireCanonical:true},{blockHash:zeroHash,requireCanonical:true}]);
  f.advance(3100);await f.player.move(-1);assert.equal(headers,2);assert.equal(f.sent.length,2);
  f.player.close();
+});
+
+function entryFixture(){
+ const f=fixture(17);f.player.close();f.m.hub=NO_LEASE_HUB;f.hub.expiresAt=0n;
+ const observedAt=f.clock(),timestamp=BigInt(Math.floor(observedAt/1000));
+ const observation:AgentEntryObservation={ref:{...f.match.ref},hub:f.m.hub,chainId:10143,
+  runtimeHash:f.m.arenas[0].runtimeHash,blockHash:zeroHash,timestamp,observedAt,
+  validUntil:Number(timestamp)*1000+3000,delegation:{...f.hub}};
+ return{...f,observation};
+}
+test('fresh entry reuses its canonical observation once but still checks the live binding and permission',async()=>{
+ const f=entryFixture();let headers=0;const getBlock=f.base.getBlock;
+ f.base.getBlock=async(...args:any[])=>{headers++;return getBlock(...args);};
+ const player=f.create(f.observation);
+ try{
+  await player.move(1);assert.equal(headers,0);assert.equal(f.bindings(),1);assert.equal(f.sent.length,1);
+  await player.recover();assert.equal(headers,1,'A later recovery cannot recycle the admission observation');
+ }finally{player.close();}
+ for(const invalid of ['revoked','binding','identity']){
+  const f=entryFixture();if(invalid==='revoked')f.override(zeroAddress,1n<<64n);
+  if(invalid==='binding')f.binding.id=5n;if(invalid==='identity')f.epoch(2);
+  const player=f.create(f.observation);
+  try{await assert.rejects(player.move(1));assert.equal(f.sent.length,0,invalid);}finally{player.close();}
+ }
+});
+test('expired or mismatching entry takes full canonical recovery; read failures never enable controls',async()=>{
+ for(const invalid of ['expired','future','rules','runtime','epoch','hub','match']){
+  const f=entryFixture();
+  if(invalid==='expired')f.advance(3001);
+  if(invalid==='future')f.observation.observedAt=f.clock()+1;
+  if(invalid==='rules')f.m.rulesVersion=16;
+  if(invalid==='runtime')f.observation.runtimeHash=zeroHash;
+  if(invalid==='epoch')f.observation.delegation.epoch=2n;
+  if(invalid==='hub')f.observation.hub=addr(99);
+  if(invalid==='match')f.observation.ref.id='5';
+  f.failBase(true);const player=f.create(f.observation);
+  try{await assert.rejects(player.move(1),/RPC timeout/);assert.equal(f.sent.length,0,invalid);}finally{player.close();}
+ }
+});
+test('entry validity expires from the original block time, not navigation or live recovery completion',async()=>{
+ const f=entryFixture();f.advance(f.observation.validUntil-f.clock()-100);
+ const read=f.node.readContract;f.node.readContract=async(r:any)=>{const v=await read(r);if(r.functionName==='boundMatch')f.advance(150);return v;};
+ f.failBase(true);const player=f.create(f.observation);
+ try{await assert.rejects(player.move(1),/RPC timeout/);assert.equal(f.sent.length,0);}finally{player.close();}
+});
+test('a lost response after entry preserves its nonce and requires a new canonical recovery',async()=>{
+ const f=entryFixture(),player=f.create(f.observation);f.lost(true);
+ try{
+  await assert.rejects(player.move(1),/Lost response/);const pending=player.journal.pending(f.session.grant.key)!;
+  assert(pending);f.reorg(true);await assert.rejects(player.recover(),/Canonical block changed/);
+  assert.equal(player.journal.pending(f.session.grant.key)?.hash,pending.hash);assert.equal(f.sent.length,1);
+  f.reorg(false);f.lost(false);f.visible(true);await player.recover();assert.equal(player.journal.pending(f.session.grant.key),undefined);
+  await player.move(0);assert.deepEqual(f.sent.map(r=>parseTransaction(r).nonce),[0,1,2],'Recovery reapplies the latest intention, then the release uses the next nonce');
+ }finally{player.close();}
 });
 
 test('an unsupported canonical read never falls back to latest or releases a pending nonce',async()=>{

@@ -15,6 +15,7 @@ import type {PoolSessionStorage} from './agent-pool-sponsor';
 import {readPoolPermission} from './agent-pool-permission';
 import {preparePoolActive} from './agent-pool-active';
 import {hubHasNoLease,hubLeaseValid} from './hub-lease';
+import {usableEntryObservation,type AgentEntryObservation} from './agent-entry-observation';
 
 export const POOL_PLAYER_GAS=14_800_000n;
 export type PoolPlayerTiming={stage:'queue'|'fence'|'snapshot'|'send'|'receipt'|'observation'|'nonce'|'signature'|'transport'|'acknowledged'|'terminal';startedAt:number;ms:number;command?:string;hash?:string};
@@ -26,7 +27,7 @@ class UnsentFenceExpired extends Error {
  * Watching/recovering remains possible when admissions or authorization expire.
  * This client never chooses an agent, starts a game or transports financial calls. */
 export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,session:PoolFamilySession,
- options:{base:PublicClient;storage:PoolSessionStorage;socket:(url:string)=>any;now?:()=>number;onInput?:(input:{id:number;direction:-1|0|1;at:number;acceptedAt?:bigint})=>void;onReconciled?:(state:EngineState)=>void;onTiming?:(sample:PoolPlayerTiming)=>void},runtime?:{node:PublicClient;feed:EngineFeed}){
+ options:{base:PublicClient;storage:PoolSessionStorage;socket:(url:string)=>any;now?:()=>number;entryObservation?:AgentEntryObservation;onInput?:(input:{id:number;direction:-1|0|1;at:number;acceptedAt?:bigint})=>void;onReconciled?:(state:EngineState)=>void;onTiming?:(sample:PoolPlayerTiming)=>void},runtime?:{node:PublicClient;feed:EngineFeed}){
  const m=validateAgentPoolManifest(manifest),arena=m.arenas.find(a=>a.app.toLowerCase()===match.ref.app.toLowerCase()),player=session.grant.player;
  const abi=agentPoolArenaAbi(m),reusable=m.version>=4;
  if(!arena||match.node!==arena.node||!match.currentBinding||match.result||match.ref.chainId!==10143
@@ -38,6 +39,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
  const stream=new EngineStream(arena.node,arena.app,options.socket,()=>engineCooldownMs(arena.node));
  const feed=runtime?.feed??new EngineFeed({app:arena.app,abi,node},stream);
  let sender:CompactArenaSender|undefined,stopped=false,verifiedAt=0,controlsUntil=0,lane:Promise<unknown>=Promise.resolve();
+ let entryObservation=options.entryObservation;
  let fenceGeneration=0;
  let fencePending:Promise<void>|undefined,fenceTimer:ReturnType<typeof setTimeout>|undefined;
  let identityPending:Promise<void>|undefined;
@@ -106,6 +108,8 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   if(stopped)throw Error('Arena controls have stopped');
   sender=undefined;acceptedDirection=undefined;inputReceipt=undefined;controlsUntil=0;fenceGeneration++;clearTimeout(fenceTimer);
   const started=now();
+  const preloaded=journal.pending(session.grant.key)?null:usableEntryObservation(entryObservation,m,match.ref,started);entryObservation=undefined;
+  const observation=preloaded?{hub:preloaded.delegation,block:{timestamp:preloaded.timestamp},validUntil:preloaded.validUntil,runtimeHash:preloaded.runtimeHash}:await(async()=>{
   const [chainId,block]=await Promise.all([options.base.getChainId(),options.base.getBlock()]);
   if(chainId!==10143)throw Error('Arena authorization requires Monad Testnet');
   if(!block.hash)throw Error('Arena publication has no canonical block');
@@ -114,11 +118,14 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   const pin={blockHash:block.hash,requireCanonical:true as const};
   const [hub,code]=await Promise.all([readHubDelegation(options.base,m.hub,arena!.app,pin),
    options.base.getCode({address:arena!.app,...pin})]);
+  return {hub,block,runtimeHash:code?keccak256(code):undefined,validUntil:started+(hubHasNoLease(m.hub,hub.expiresAt)?3000:Math.min(3000,Number(hub.expiresAt-block.timestamp)*1000))};
+  })();
+  const {hub,block}=observation;
   // A canonical new epoch is closure evidence even if the old node is down.
   if(hub.epoch>epoch){journal.retirePrevious(session.grant.key,hub.epoch);throw Error('The prior arena epoch is closed. Read its published result.');}
   if(hub.epoch!==epoch)throw Error('Waiting for the assigned arena epoch');
   if(hub.status===0){journal.retireClosed(session.grant.key,epoch);throw Error('The arena epoch is closed. Read its published result.');}
-  if(!code||keccak256(code)!==arena!.runtimeHash)throw Error('Arena bytecode differs from the approved deployment');
+  if(observation.runtimeHash!==arena!.runtimeHash)throw Error('Arena bytecode differs from the approved deployment');
   await identify(true);
   if(permissionPending()&&hub.status===1&&hubLeaseValid(m.hub,hub.expiresAt,block.timestamp))await reconcilePermission();
   const b=await node.readContract({address:arena!.app,abi,functionName:'boundMatch'});
@@ -147,7 +154,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   if(stopped)throw Error('Arena controls have stopped');
   // Fence against the hub again shortly. UI health changes must not reset the
   // renderer, session key, last intent or authoritative positions.
-  controlsUntil=started+(hubHasNoLease(m.hub,hub.expiresAt)?3000:Math.min(3000,Number(hub.expiresAt-block.timestamp)*1000));
+  controlsUntil=observation.validUntil;
   sender=compactArenaSession({node,abi,app:arena!.app,key:session.key,match:id,...(reusable?{epoch}:{}),expires:control.expires,gas:POOL_PLAYER_GAS,now,onTiming:options.onTiming});
   prefetchFence();
   feed.invalidate();const recovered=verify(await feed.read(id,true));

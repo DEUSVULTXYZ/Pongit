@@ -28,6 +28,7 @@ import {AgentScoreboard} from './AgentScoreboard';
 import {ChaosEffectsHud} from './ChaosEffectsHud';
 import {poolBase,poolBrowserSponsor,finishPoolSponsor} from '../lib/agent-pool';
 import {agentEntryHandoff} from '../lib/agent-entry-handoff';
+import type {AgentEntryObservation} from '../../shared/agent-entry-observation';
 import {connect,rememberedAccount} from '../lib/wallet';
 import {arcadeAudio} from '../lib/audio';
 import {ArcadeAmbience} from './ArcadeAmbience';
@@ -88,7 +89,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
   if(lastRef.current!==refKey){lastRef.current=refKey;inputTimeline.current.reset();inputClock.current=null;immediateDirection.current=0;latestSnapshot.current=null;setView(null);setSnapshot(null);setDirection(0);}setError('');setConnection('Connecting');setReady(false);
   let config:AgentPoolManifest|undefined,current:PoolMatchView|undefined,nextPublished=0,nextRecovery=0,retryRecoveryAt=0,recoveredVersion=-1,wasHidden=false;
   let entryStarted=0,firstState=false;
-  let entryReady=false,entryLaunch:Awaited<ReturnType<ReturnType<typeof createPoolPlayer>['launch']>>;
+  let entryReady=false,entryLaunch:Awaited<ReturnType<ReturnType<typeof createPoolPlayer>['launch']>>,entryObservation:AgentEntryObservation|undefined;
   let publishedRequest:Promise<void>|undefined;
   const controller=new AbortController(),quiet=quietFailure();
   const get=async<T,>(path:string):Promise<T>=>{
@@ -117,6 +118,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
     if(document.hidden){wasHidden=true;delay=2000;return;}
     if(!config){
      const handoff=agentEntryHandoff.take(reference,rememberedAccount()?.address);
+     entryObservation=handoff?.observation;
      const [loaded,value]=handoff?[handoff.config,handoff.view]:await Promise.all([get<AgentPoolManifest>('/config'),get<PoolMatchView>(matchPath)]);if(cancelled)return;
      // Admission gates do not revoke an existing match. Keep its verified
      // observer/player and published result available while new games pause.
@@ -142,11 +144,11 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
        }).catch(reject);});
       }
       if(cancelled){release?.();return;}
-      const controlled=createPoolPlayer(config,current,saved,{base:poolBase(),storage:sessionStorage,socket:u=>new WebSocket(u),
+      const controlled=createPoolPlayer(config,current,saved,{base:poolBase(),storage:sessionStorage,socket:u=>new WebSocket(u),entryObservation,
        onTiming:sessionStorage.getItem('pongit:measure-controls')==='1'?sample=>window.dispatchEvent(new CustomEvent('pongit:command-timing',{detail:{...sample,ref:refKey}})):undefined,onInput:input=>{
        const state=latestSnapshot.current;if(cancelled||!state)return;
        inputTimeline.current.notice(input,state.clock,state.observedAt,inputClock.current?.matchId===refKey?inputClock.current.frame:undefined);inputRevision(n=>n+1);
-      },onReconciled:state=>{if(!cancelled){inputTimeline.current.reset();inputClock.current=null;latestSnapshot.current=state;publish(state);}}});created=controlled;playerClient.current=controlled;
+      },onReconciled:state=>{if(!cancelled){inputTimeline.current.reset();inputClock.current=null;latestSnapshot.current=state;publish(state);}}});entryObservation=undefined;created=controlled;playerClient.current=controlled;
      }else created=await createPoolObserver(config,current,u=>new WebSocket(u));
      if(cancelled){created.close();return;}observer=created;observer.watch(publish);
     }
