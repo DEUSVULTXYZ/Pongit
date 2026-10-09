@@ -53,9 +53,14 @@ export function agentRuntimeObservations(base:PublicClient,pool:Address,hub:Addr
    if(current.lanes instanceof Error)throw current.lanes;
    return{block:current.block,lanes:current.lanes};
   }},
-  hub:{async read(app:Address,forCommand=false):Promise<HubObservation>{
+  hub:{async read(app:Address,_forCommand=false):Promise<HubObservation>{
    const key=app.toLowerCase();if(!names.includes(key))throw Error('Arena is outside the observed pool');
-   const current=!value||now()-value.at>=(forCommand?1500:3000)?await load():(prefetch(),value);
+   // Refresh ahead of expiry without placing an already-authorized command
+   // behind that refresh. The engine still checks the hosted session and this
+   // ORIGINAL three-second deadline after its await, before signing. Returning
+   // the same observation cannot renew the deadline. Contradictory completed
+   // refreshes replace the old value immediately, including scoped failures.
+   const current=!value||now()-value.at>=3000?await load():(prefetch(),value);
    if(now()-current.at>=3000)throw Error('Hub observation is stale');
    const observed=current.hubs.get(key);
    if(!observed||observed instanceof Error)throw observed??Error('Arena hub observation absent');

@@ -222,19 +222,18 @@ async function arenaLoop(app:Address,runtimeHash:string){
    admitted=await admission.read();
    if(!admitted){
     const proofStarted=Date.now();
-    const [[engineEpoch,count],session]=await Promise.all([
+    const [authority,[[engineEpoch,count],session]]=await Promise.all([
+     admissionReads.proof(ticket,block),Promise.all([
      node.readContract({address:app,abi,functionName:'resultCommitment'}),
      node.request({method:'interlude_session',params:[]} as any) as Promise<any>,
-    ]);
+    ])]);
     const cancel=block.timestamp>ticket.expires;
     const code=async(c:ReusableAgentBinding['controlA'],player:Address)=>cancel||c.codeHash===zeroHash?zeroHash:openingCode({
      address:c.house?r.modules.HousePolicies:player,hubBaseBlock:d!.baseBlock,engineBaseBlock:session.baseBlock,hubEpoch:d!.epoch,engineEpoch:session.epoch});
     // Independent evidence shares the same pinned blocks. Wait for every check
     // before signing; a failed code/header/ticket read cannot admit a player.
-    const [issuedDigest,source,engineCodeHashA,engineCodeHashB]=await Promise.all([
-     controlBase.readContract({address:m.pool,abi:poolAbi,functionName:'issuedTicket',args:[app,ref.epoch,ticket.sequence],blockNumber:block.number}),
-     admissionReads.source(ticket.sourceBlock),code(binding.controlA,binding.a),code(binding.controlB,binding.b),
-    ]);
+    const [engineCodeHashA,engineCodeHashB]=await Promise.all([code(binding.controlA,binding.a),code(binding.controlB,binding.b)]);
+    const {issuedDigest,source}=authority;
     const evidence={chainId:10143,hub:m.hub,authority:m.pool,arena:app,reservedMatch:ref.id,
      issuedDigest,sourceHash:source.hash!,hubEpoch:d.epoch,hubStatus:d.status,hubExpires:d.expiresAt,
      engineEpoch,engineCount:count,now:block.timestamp,engineCodeHashA,engineCodeHashB};

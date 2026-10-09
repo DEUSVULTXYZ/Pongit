@@ -49,14 +49,25 @@ test('a failed arena subcall does not poison assignments or the other six arenas
  assert.equal((await v.assignments.read()).lanes.length,5);
  await assert.rejects(v.hub.read(apps[2],true),/observation failed/);
  assert.equal((await v.hub.read(apps[6],true)).delegation.epoch,3n);
- f.laneFail();f.time(1600);await v.hub.read(apps[6],true);
+ f.laneFail();f.time(3001);await v.hub.read(apps[6],true);
  await assert.rejects(v.assignments.read(),/Incomplete arena assignments/);
 });
-test('slow planning refresh stays nonblocking inside its bound; concurrent commands await the same fresh fence',async()=>{
+
+test('a completed contradictory refresh replaces a still-valid command observation immediately',async()=>{
+ const f=fixture(),v=agentRuntimeObservations(f.base,pool,hub,apps,5,f.now);
+ await v.hub.read(apps[0],true);f.fail(0);f.time(500);
+ assert.equal((await v.hub.read(apps[0],true)).observedAt,0);
+ await new Promise(r=>setImmediate(r));
+ await assert.rejects(v.hub.read(apps[0],true),/observation failed/);
+ assert.equal((await v.hub.read(apps[1],true)).observedAt,500);
+});
+test('unexpired commands do not wait for refresh; expired commands await the same canonical fence',async()=>{
  const f=fixture(),v=agentRuntimeObservations(f.base,pool,hub,apps,5,f.now);
  await v.assignments.read();f.time(500);f.slow();await v.assignments.read();
  await new Promise(r=>setImmediate(r));f.time(1600);
- await v.assignments.read();let done=false;
+ await v.assignments.read();
+ assert((await Promise.all(apps.map(a=>v.hub.read(a,true)))).every(r=>r.observedAt===0),'The original validity deadline is never extended');
+ f.time(3001);let done=false;
  const commands=Promise.all(apps.map(a=>v.hub.read(a,true))).then(x=>{done=true;return x;});
  await new Promise(r=>setImmediate(r));assert(!done);assert.deepEqual(f.counts(),{headers:2,reads:2});
  f.finish();assert((await commands).every(r=>r.observedAt===500),'Validity starts before the RPC latency');

@@ -58,3 +58,38 @@ test('matching source blocks share only an in-flight header and never a persiste
  assert.equal(f.counts().headers,1);f.release();assert.equal((await first)[0].hash,hash);
  const next=f.read.source(40n);assert.equal(f.counts().headers,2);f.release();await next;
 });
+
+test('four admission proofs share one canonical issued-ticket read and one source header',async()=>{
+ const f=fixture(),lanes=refs.map(ref=>({ref}));
+ const pairs=await Promise.all(refs.map(r=>f.read.ticket(r,lanes,{hash})));
+ let calls=0,fail=-1;
+ f.base.request=async(request:any)=>{
+  calls++;assert.deepEqual(request.params[1],{blockHash:hash,requireCanonical:true});
+  const decoded=decodeFunctionData({abi:multicall3Abi,data:request.params[0].data});
+  assert.equal(decoded.functionName,'aggregate3');if(decoded.functionName!=='aggregate3')throw Error();
+  return encodeFunctionResult({abi:multicall3Abi,functionName:'aggregate3',result:decoded.args[0].map((c,i)=>{
+   const d=decodeFunctionData({abi,data:c.callData});assert.equal(d.functionName,'issuedTicket');
+   assert.equal(c.target.toLowerCase(),pool);
+   return{success:i!==fail,returnData:encodeFunctionResult({abi,functionName:'issuedTicket',result:hash})};
+  })});
+ };
+ const pending=Promise.all(pairs.map(p=>f.read.proof(p[0],{hash})));
+ await new Promise(r=>setImmediate(r));assert.equal(calls,1);assert.equal(f.counts().headers,1);
+ f.release();assert((await pending).every(p=>p.issuedDigest===hash&&p.source.hash===hash));
+ // A later attempt must recheck canonicality, not reuse the old proof forever.
+ const again=f.read.proof(pairs[0][0],{hash});await new Promise(r=>setImmediate(r));
+ assert.equal(calls,2);f.release();await again;
+ fail=2;
+ const retries=Promise.allSettled(pairs.map(p=>f.read.proof(p[0],{hash})));
+ await new Promise(r=>setImmediate(r));f.release();
+ const results=await retries;assert.equal(results.filter(r=>r.status==='fulfilled').length,4);assert.equal(results[2].status,'rejected');
+});
+
+test('a failed canonical proof or foreign ticket cannot authorize an admission',async()=>{
+ const f=fixture(),[t]=await f.read.ticket(refs[0],[],{hash});
+ f.base.request=async()=>{throw Error('Canonical hash rejected');};
+ const proof=assert.rejects(f.read.proof(t,{hash}),/Canonical/);await new Promise(r=>setImmediate(r));f.release();
+ await proof;
+ await assert.rejects(f.read.proof({...t,arena:zeroAddress},{hash}),/Invalid/);
+ await assert.rejects(f.read.proof(t,{hash:null}),/Invalid/);
+});
