@@ -129,7 +129,7 @@ export async function installSyncProbe(page:Page){
    if(props&&props.observedAt!==observed){
     observed=props.observedAt;source=props;
     if(data.snapshots.length<20000)data.snapshots.push(JSON.parse(JSON.stringify({at:performance.now(),
-     observedAt:props.observedAt,rulesVersion:props.rulesVersion,clock:props.clock,state:props.state,chaos:props.chaos,
+     observedAt:props.observedAt,matchId:props.matchId,rulesVersion:props.rulesVersion,clock:props.clock,state:props.state,chaos:props.chaos,
      direction:props.direction,side:props.side,controllable:props.controllable,pending:props.pending,pause:props.housePrediction?.pause,
      housePrediction:props.housePrediction,coherentControls:props.coherentControls,progressionLimit:props.progressionLimit},
      (_,v)=>typeof v==='bigint'?v.toString():v)));
@@ -202,22 +202,22 @@ export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];wa
     // remain failures; this is not a general exemption for Chaos jumps.
     boundaries:for(const effect of raw.effects)for(const boundary of ['start','expiry'] as const){
      const end=BigInt(boundary==='start'?effect.startsAt:effect.expiresAt)*1000n;if(!effect.id||end<=t)continue;
-     if(boundary==='start'){
+     if(boundary==='start'||end>t+100000n){
       // A known future draw can start beyond the old 100 ms expiry window.
       // Require the two actual rendered poses to straddle its exact time.
       // Missing poses, changed reference/source/rally or early resizing fail.
       const previous=poses.get(a.at),current=poses.get(b.at);
-      if(!previous||!current||previous.ref!==current.ref||String(current.ref).split(':').at(-1)!==String(snapshot.state.id)
+      if(!previous||!current||previous.ref!==current.ref||String(current.ref).split(':').at(-1)!==String(snapshot.matchId??snapshot.state.id)
        ||previous.rally!==a.rally||current.rally!==b.rally
        ||BigInt(previous.sourceUs)!==t||BigInt(current.sourceUs)!==t
        ||BigInt(previous.renderedUs)>=end||BigInt(current.renderedUs)<end)continue;
-     }else if(end>t+100000n)continue;
+     }
      const predicted=eventPaddles({...raw,t:end,paddleSpeed:rulesPaddleSpeed(snapshot.rulesVersion)});
      const half=Number(chaosOuterHalf(b.side===0?predicted.heightA:predicted.heightB,b.side===0?predicted.splitA:predicted.splitB))/1e6;
      const expected=Math.max(half,Math.min(576-half,a.y));
      if(Math.abs(b.height/2-half)>.001||Math.abs(b.y-expected)>.001||Math.abs(expected-a.y)<=.001)continue;
      const next=data.snapshots.slice(index+1,index+5).find(s=>s.at>=b.paintedAt&&s.at-b.paintedAt<=100&&BigInt(s.state.t)>=end);
-     if(!next?.chaos||next.rulesVersion!==snapshot.rulesVersion||next.state.id!==snapshot.state.id
+     if(!next?.chaos||next.rulesVersion!==snapshot.rulesVersion||(next.matchId??next.state.id)!==(snapshot.matchId??snapshot.state.id)
       ||next.state.scoreA!==snapshot.state.scoreA||next.state.scoreB!==snapshot.state.scoreB)continue;
      if(next.chaos.physics.effects.some((e:any)=>e.id&&!raw.effects.some((old:any)=>old.id===e.id&&old.serial===e.serial&&old.startsAt===e.startsAt&&old.expiresAt===e.expiresAt)))continue;
      const actual=eventPaddles({...next.chaos.physics,t:BigInt(next.chaos.physics.t),paddleSpeed:rulesPaddleSpeed(next.rulesVersion)});
