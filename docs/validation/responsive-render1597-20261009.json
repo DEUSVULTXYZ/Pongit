@@ -1,0 +1,69 @@
+{
+  "kind": "Actual public rendering failure; not a passing qualification",
+  "passed": false,
+  "ref": {
+    "app": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e",
+    "epoch": "1",
+    "id": "1597"
+  },
+  "source": "2499ce1",
+  "traceSha256": "d9573f0ed554223d3c10a80da184151c1c6340d9ee3f0cceca3eed1fbeee9688",
+  "reportSha256": "cf920998fdde7a644822d825b0565462fe80be10dc0d60faef28035cd1ef77b6",
+  "firstJump": {
+    "at": 15547,
+    "side": 1,
+    "dt": 0.40000009536743164,
+    "d": 15.029665758630983,
+    "limit": 2.1680000400543213,
+    "from": 186.58569535001465,
+    "to": 171.55602959138366,
+    "observedAt": 1791552890416
+  },
+  "frames": [
+    {
+      "at": 15497,
+      "integratedAt": 15554.100000143051,
+      "paintedAt": 15554.200000047684,
+      "paint": 467,
+      "side": 1,
+      "y": 186.58569535001465,
+      "height": 96,
+      "top": 138.58569535001465,
+      "bottom": 234.58569535001465,
+      "rally": "0:0",
+      "finished": false,
+      "observedAt": 1791552890416
+    },
+    {
+      "at": 15547,
+      "integratedAt": 15554.600000143051,
+      "paintedAt": 15554.600000143051,
+      "paint": 468,
+      "side": 1,
+      "y": 171.55602959138366,
+      "height": 96,
+      "top": 123.55602959138366,
+      "bottom": 219.55602959138366,
+      "rally": "0:0",
+      "finished": false,
+      "observedAt": 1791552890416
+    },
+    {
+      "at": 15563.8,
+      "integratedAt": 15564.100000143051,
+      "paintedAt": 15564.5,
+      "paint": 469,
+      "side": 1,
+      "y": 169.84187418574209,
+      "height": 96,
+      "top": 121.84187418574209,
+      "bottom": 217.84187418574209,
+      "rally": "0:0",
+      "finished": false,
+      "observedAt": 1791552890502
+    }
+  ],
+  "cause": "Remote paddle and ball use delayed RAF callback timestamps while local input uses actual callback time. Two canvas draws .4ms apart advance the remote projection50ms.",
+  "fix": "Sample performance.now once at draw entry for the whole court, including immediate input paints. Keep physics, speed and contact classifications unchanged.",
+  "reference": "https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame#parameters"
+}

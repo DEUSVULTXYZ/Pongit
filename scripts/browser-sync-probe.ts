@@ -178,7 +178,7 @@ export async function installSyncProbe(page:Page){
      rally:this.canvas.dataset.rally,finished:props?.state?.finished,observedAt:observed});
     return;
    }
-   if(data.frames.length<40000)data.frames.push({at:frameAt??performance.now(),paintedAt:performance.now(),x:x+6,y:y+6,
+   if(data.frames.length<40000)data.frames.push({at:this.canvas.dataset.frameAt?Number(this.canvas.dataset.frameAt):frameAt??performance.now(),paintedAt:performance.now(),x:x+6,y:y+6,
     sourceT:Number(source?.state?.t??0)/1000,clock:Number(source?.clock??0)/1000,
     score:`${source?.state?.scoreA}:${source?.state?.scoreB}`,rally:this.canvas.dataset.rally,buffering:this.canvas.dataset.buffering==='true',finished:source?.state?.finished,
     pauseStatus:source?.housePrediction?.pause?.status??0,awaitingServe:!!source?.state?.awaitingServe,observedAt:observed});

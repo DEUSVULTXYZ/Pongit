@@ -131,10 +131,14 @@ export function Court({
     const measureControls=sessionStorage.getItem('pongit:measure-controls')==='1';
     let previousParticipant:typeof current.current|undefined,previousTarget=0n;
     let localPaintAt=performance.now();
-    function draw(now: number) {
+    function draw() {
+      // RAF's timestamp can be old when its callback finally runs. Input
+      // microtasks also paint immediately. Use one actual clock for the whole
+      // scene:1597 advanced the bot15 units between paints only.4ms apart.
+      const now=performance.now();
       let p = current.current;
       if(measureControls)el.dataset.frameAt=String(now);
-      const paintedAt=performance.now(),priorPaintAt=localPaintAt;localPaintAt=paintedAt;
+      const paintedAt=now,priorPaintAt=localPaintAt;localPaintAt=paintedAt;
       if(measureControls)el.dataset.integratedAt=String(paintedAt);
       let localControls:readonly LocalIntent[]|undefined;
       // Keyboard intent and ACKs are stored outside React. An unrelated render
@@ -384,7 +388,7 @@ export function Court({
       frame = requestAnimationFrame(draw);
     }
     const visibility=()=>{cancelAnimationFrame(frame);reconciliation.reset();previousParticipant=undefined;playout.reset();playerPlayout.reset();trail.reset();chaosTrails.forEach(t=>t.reset());if(!document.hidden){last=lastDraw=performance.now();count=0;previousSound=null;seenEffects=new Set(current.current.chaos?.physics.effects.map(e=>e.serial)||[]);frame=requestAnimationFrame(draw);}};
-    const unsubscribe=subscribeIntent?.(()=>{if(!document.hidden){cancelAnimationFrame(frame);draw(performance.now());}});
+    const unsubscribe=subscribeIntent?.(()=>{if(!document.hidden){cancelAnimationFrame(frame);draw();}});
     document.addEventListener("visibilitychange",visibility);
     if(!document.hidden)frame = requestAnimationFrame(draw);
     return () => {unsubscribe?.();cancelAnimationFrame(frame);document.removeEventListener("visibilitychange",visibility);};
