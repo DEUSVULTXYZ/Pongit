@@ -8,6 +8,7 @@ import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
 import {synchronizedAgentArenaAbi} from '../shared/abi-SynchronizedAgentArena';
 import {installSyncProbe,syncMetrics,confirmedInputMetrics,sustainedInputMetrics} from './browser-sync-probe';
 import {collisionIntegrity} from './collision-integrity-metrics';
+import {paddleCrossings} from './paddle-crossing-metrics';
 import {visibleAim,visibleContactRelease} from './browser-aim';
 import {receiptClockMetrics} from './receipt-clock-metrics';
 import {terminalReceiptRaces} from './terminal-receipt-evidence';
@@ -697,7 +698,7 @@ try{
   // a fast command acknowledgement as proof of smooth rendered trajectories.
   report.idleStartedAt=new Date().toISOString();await page.waitForTimeout(naturalMatch?0:idleMs);report.idleEndedAt=new Date().toISOString();
   const data=await page.evaluate(()=>(window as any).__syncProbe);
-  await writeFile(out+'/sync-trace.json',JSON.stringify(data));report.sync=syncMetrics(data);report.sustained=sustainedInputMetrics(data);report.collisions=collisionIntegrity(data.poses??[],data.snapshots??[]);report.layout=data.layout;
+  await writeFile(out+'/sync-trace.json',JSON.stringify(data));report.sync=syncMetrics(data);report.sustained=sustainedInputMetrics(data);report.collisions=collisionIntegrity(data.poses??[],data.snapshots??[]);report.paddleCrossings=paddleCrossings(data.poses??[],data.paddles??[],data.snapshots??[]);report.layout=data.layout;
   if(spectator){const observed=await spectator.evaluate(()=>(window as any).__syncProbe);
    await writeFile(out+'/spectator-trace.json',JSON.stringify(observed));report.spectatorSync=syncMetrics(observed);}
  }
@@ -778,6 +779,7 @@ try{
   report.scenarioCounts=counts;
   assert(counts.held>=4&&counts['rapid-reversal']>=4&&counts['aim-centre']>=5&&counts['aim-edge']>=5&&counts['release-at-contact']>=1,'Required visible keyboard scenarios did not all execute');
   assert(report.sustained.held.samples>=20&&report.sustained.held.outsideTarget===0,'Held movement differs from contractual speed');
+  assert.equal(report.paddleCrossings.throughPaddle.length,0,'A painted ball crossed the solid part of a painted paddle');
   assert(report.sustained.stopping.samples>=3&&report.sustained.stopping.p95Drift<=2&&report.sustained.stopping.maxDrift<=6,'Release drift exceeds limits');
   assert(report.collisions.samples>=100&&report.collisions.visiblePaddleBounces>=1&&report.collisions.unconfirmed.length===0,'Visible paddle contact lacks live confirmation');
   assert(report.layout?.length>0,'Visible court geometry was not recorded');

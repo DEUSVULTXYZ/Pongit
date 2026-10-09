@@ -8,6 +8,23 @@ import {projectLive} from '../web/lib/presentation';
 import {LiveClock} from '../web/lib/live-paddle';
 const source=()=>({...initial(`0x${'ab'.repeat(32)}`),x:80n*SCALE,y:360n*SCALE,vx:-128n*SCALE,vy:64n*SCALE,left:288n*SCALE,leftDir:0});
 
+test('both multiball planes wait for live resolution, including predicted misses',()=>{
+ for(const ball of [0,1])for(const side of [0,1]){
+  const s=initialChaosEvents(zeroHash);
+  s.effects[0]={id:21,serial:1,target:2,variant:0,startsAt:0,expiresAt:12000,remaining:0};s.activeMask=1<<20;
+  s.balls[1]={...s.balls[0],alive:true,trailRevision:1};
+  s.balls[ball]={...s.balls[ball],x:BigInt(side?980:44)*1_000_000_000_000n,y:100_000_000_000_000n,vx:BigInt(side?200:-200)*1_000_000n,vy:0n};
+  const original=structuredClone(s);
+  const result=projectChaosParticipant(s,100_000n,[],'complete',undefined,true);
+  assert(result.contactBoundary,'a miss is as uncertain as a bounce');
+  assert.equal(result.state.t,19_999n);assert.equal(result.collisions.length,0);
+  assert(side?result.state.balls[ball].x<=984_000_000_000_000n:result.state.balls[ball].x>=40_000_000_000_000n);
+  assert.deepEqual(s,original);
+  const normal=projectChaosParticipant(s,100_000n,[],'complete');
+  assert(side?normal.state.balls[ball].x>984_000_000_000_000n:normal.state.balls[ball].x<40_000_000_000_000n,'ordinary mirror physics still resolves the miss');
+ }
+});
+
 test('responsive rendering waits for live contact even after the input receipt',()=>{
  const s={...source(),left:360n*SCALE};
  const inputs=[{side:0 as const,direction:0 as const,at:0n,confirmed:true}];

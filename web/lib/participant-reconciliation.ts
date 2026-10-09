@@ -40,7 +40,7 @@ export class ParticipantReconciliation {
  private localPicture?:{side:0|1;y:number};
  private stoppedAt?:number;
  reset(){this.paddles=[0,0];this.balls.clear();this.ballPictures.clear();this.localDirection=0;this.stopCorrection=2;this.localPicture=undefined;this.stoppedAt=undefined;}
- sample(current:ParticipantPose,previous:ParticipantPose|undefined,elapsedMs:number,local?:{side:0|1;direction:number;speed?:number;motionMs?:number}):ParticipantPose{
+ sample(current:ParticipantPose,previous:ParticipantPose|undefined,elapsedMs:number,local?:{side:0|1;direction:number;speed?:number;motionMs?:number;motion?:readonly {direction:number;ms:number}[]}):ParticipantPose{
   const dt=clamp(elapsedMs,0,50);
   const released=!!local&&local.direction===0&&this.localDirection!==0;
   if(local&&local.direction!==this.localDirection){
@@ -50,6 +50,14 @@ export class ParticipantReconciliation {
   for(const side of [0,1] as const){
    if(previous)this.paddles[side]+=previous.paddles[side]-current.paddles[side];
    if(local?.side===side){
+    if(local.motion&&local.speed!==undefined&&this.localPicture?.side===side){
+     // Integrate the actual portions before/after each key event. Rounding an
+     // 80ms press to whole RAFs repeatedly accumulated tens of pixels, then
+     // the old release lock preserved a paddle different from live physics.
+     let y=this.localPicture.y;
+     for(const part of local.motion)y=clamp(y+part.direction*local.speed*part.ms/1000,current.halves[side],576-current.halves[side]);
+     this.paddles[side]=y-current.paddles[side];
+    }else{
     if(released&&this.stoppedAt!==undefined){
      // A release can land between animation frames. Freeze the last painted
      // location, not an extra partial frame reconstructed from the new ACK.
@@ -74,6 +82,7 @@ export class ParticipantReconciliation {
      const motionMs=local.motionMs===undefined?dt:clamp(local.motionMs,0,dt);
      this.paddles[side]=clamp(this.localPicture.y+local.direction*local.speed*motionMs/1000,
       current.halves[side],576-current.halves[side])-current.paddles[side];
+    }
     }
    }else this.paddles[side]=settle(this.paddles[side],dt,120);
    this.paddles[side]=clamp(current.paddles[side]+this.paddles[side],current.halves[side],576-current.halves[side])-current.paddles[side];

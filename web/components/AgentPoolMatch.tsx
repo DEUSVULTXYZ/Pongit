@@ -204,7 +204,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
   void poll();return()=>{cancelled=true;controller.abort();clearTimeout(timer);observer?.close();playerClient.current=null;release?.();};
  },[enabled,refKey,retry]);
  async function move(dir:-1|0|1){
-  const client=playerClient.current;if(!client||!acceptIntent.current&&dir!==0)return;const version=++commandVersion.current;immediateDirection.current=dir;setDirection(dir);setPending(true);
+  const client=playerClient.current;if(!client||!acceptIntent.current&&dir!==0)return;const version=++commandVersion.current;immediateDirection.current=dir;inputTimeline.current.localIntent(dir,performance.now());setDirection(dir);setPending(true);
   try{await client.move(dir);setControlError('');}catch(e){recoveryVersion.current++;setControlError(poolUserError(e));setReady(false);}finally{if(commandVersion.current===version)setPending(false);}
  }
  useEffect(()=>{
@@ -300,7 +300,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
       housePrediction={snapshot.sync?{...snapshot.sync,progressive:manifest.current?.housePolicy==='progressive-v1'}:undefined}
       coherentControls={side>=0?[...queuedDirections(snapshot.sync?.pendingControls??0n),...inputTimeline.current.controls(side as 0|1,snapshot.state.t)]:undefined}
       confirmedInputRevision={inputTimeline.current.revision}
-      readIntent={side>=0?processed=>({direction:immediateDirection.current,controls:[...queuedDirections(latestSnapshot.current?.sync?.pendingControls??0n),...inputTimeline.current.controls(side as 0|1,processed)],revision:inputTimeline.current.revision}):undefined}
+      readIntent={side>=0?processed=>({direction:immediateDirection.current,local:inputTimeline.current.localControls,controls:[...queuedDirections(latestSnapshot.current?.sync?.pendingControls??0n),...inputTimeline.current.controls(side as 0|1,processed)],revision:inputTimeline.current.revision}):undefined}
       onPaint={id=>{if(id===refKey)paintedAt.current=performance.now();}}
       onInputClock={(matchId,frame)=>{inputClock.current={matchId,frame};}}
       progressionLimit={snapshot.phase!==2?snapshot.state.t:snapshot.sync?.pause.human?snapshot.sync.pause.limitUs:undefined}

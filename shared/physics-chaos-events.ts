@@ -177,7 +177,7 @@ export type ChaosContactResolution=boolean|'complete';
 /** The rules-8 kernel by default. `everyContact=false` reproduces the rules-6 kernel deployed on
  * 13 September 2026 (still linked by the Agent Arcade), which resolved only the tie-break winner
  * of a microsecond: shared/chaos-rules.ts chooses by an application's RULES_VERSION. */
-export function advanceChaosEvents(source:ChaosPhysicsState,target:bigint,budget=128,stopAtPoint=false,everyContact:ChaosContactResolution='complete'):[ChaosPhysicsState,boolean,ChaosPhysicsCollision[]]{
+export function advanceChaosEvents(source:ChaosPhysicsState,target:bigint,budget=128,stopAtPoint=false,everyContact:ChaosContactResolution='complete',beforePaddle?:(at:bigint)=>void):[ChaosPhysicsState,boolean,ChaosPhysicsCollision[]]{
  if(target<source.t||!Number.isInteger(budget)||budget<0||budget>512)throw Error('Numeric range');
  const cancel=(reason:number):[ChaosPhysicsState,boolean,ChaosPhysicsCollision[]]=>{const s=structuredClone(source);s.cancelled=true;s.cancelReason=reason;s.effects=emptyEffects();s.balls=[emptyBall(),emptyBall()];s.activeMask=0;return[s,true,[]];};
  if(target>1800000000n)return cancel(2);
@@ -191,6 +191,13 @@ export function advanceChaosEvents(source:ChaosPhysicsState,target:bigint,budget
    const [hit,goals,beneficiaries,planes]=nextContact(s,all?tied:undefined);let boundary=grid?s.nextForce:NEVER;
    for(const e of s.effects){if(!e.id)continue;let at=BigInt(e.startsAt)*1000n;if(at>s.t&&at<boundary)boundary=at;at=BigInt(e.expiresAt)*1000n;if(at>s.t&&at<boundary)boundary=at;}
    if(boundary<s.t)throw Error('Numeric range');const remaining=target-s.t;
+   // Presentation may stop before ANY paddle-plane decision. A predicted miss
+   // emits no collision log, so filtering the log only fenced successful hits
+   // and let either multiball escape before live physics resolved its contact.
+   // Normal physics/parity callers omit this hook and retain exact behavior.
+   if(beforePaddle&&hit.dt<=remaining&&s.t+hit.dt<=boundary&&planes.some(p=>p[1]===hit.dt)){
+    const at=s.t+hit.dt;move(s,at>s.t?at-1n:s.t);beforePaddle(at);return[s,false,log];
+   }
    if(hit.dt>remaining&&boundary>target){move(s,target);break;}
    if(boundary<=target&&(hit.dt===NEVER||boundary-s.t<=hit.dt)){
     const dt=boundary-s.t;move(s,boundary);

@@ -16,12 +16,10 @@ export function eventHud(s:ChaosPhysicsState):ChaosEffectState[]{return s.effect
  * point, starts a new rally or chooses an event. Work per frame is bounded. */
 export function projectChaos(source:ChaosPhysicsState,target:bigint,everyContact=chaosContactResolution(Number(manifest.rulesVersion)),uncertainContact=false){
  const limit=source.t+600000n,bounded=target<source.t?source.t:target>limit?limit:target;
- let [state,complete,collisions]=advanceChaosEvents(source,bounded,96,true,everyContact);
- const contact=uncertainContact?collisions.find(c=>c.kind===3||c.kind===4):undefined;
+ let contact=false;
+ let [state,complete,collisions]=advanceChaosEvents(source,bounded,96,true,everyContact,uncertainContact?()=>{contact=true;}:undefined);
  if(contact){
-  // Pending input cannot prove a paddle contact, even if the mirror predicts
-  // a hit. Stop before it; do not emit its sound, trail reversal or score.
-  [state,,collisions]=advanceChaosEvents(source,contact.at>source.t?contact.at-1n:source.t,96,true,everyContact);
+  // Neither a predicted hit nor a predicted miss confirms the live decision.
   return {state,collisions,pointBoundary:false,contactBoundary:true,waiting:true};
  }
  const goal=state.score.rally!==source.score.rally||state.score.finished!==source.score.finished;

@@ -18,7 +18,7 @@ import {chaosContactResolution} from '../../shared/chaos-rules';
 import {SpectatorPlayout,visibleBall} from '../lib/spectator-playout';
 import {projectParticipant,projectChaosParticipant,type TimedControl,type HousePrediction} from '../lib/participant-projection';
 import {ParticipantReconciliation,participantContinuationTime,participantMotionMs,participantSourceChanged,type ParticipantPose} from '../lib/participant-reconciliation';
-import type {ParticipantPresentationClock} from '../lib/participant-inputs';
+import {localMotion,type LocalIntent,type ParticipantPresentationClock} from '../lib/participant-inputs';
 function participantPose(state:State,chaos?:ChaosDecoded['physics']):ParticipantPose{
  const paddles=chaos?eventPaddles(chaos):null;
  return {paddles:[Number(state.left)/1e6,Number(state.right)/1e6],
@@ -54,7 +54,7 @@ type Props = {
   onPlayback?:(frame:CourtPlayback)=>void;
   onInputClock?:(matchId:string,frame:ParticipantPresentationClock)=>void;
   onPaint?:(matchId:string)=>void;
-  readIntent?:(processed:bigint)=>{direction:number;controls:readonly TimedControl[];revision:number};
+  readIntent?:(processed:bigint)=>{direction:number;controls:readonly TimedControl[];revision:number;local?:readonly LocalIntent[]};
   onStats: (fps: number, extrapolated: boolean, waiting: boolean,cause?:PresentationWait) => void;
 };
 export function Court({
@@ -122,11 +122,14 @@ export function Court({
     const reconciliation=new ParticipantReconciliation();
     const measureControls=sessionStorage.getItem('pongit:measure-controls')==='1';
     let previousParticipant:typeof current.current|undefined,previousTarget=0n;
+    let localPaintAt=performance.now();
     function draw(now: number) {
       let p = current.current;
+      const paintedAt=performance.now(),priorPaintAt=localPaintAt;localPaintAt=paintedAt;
+      let localControls:readonly LocalIntent[]|undefined;
       // Keyboard intent and ACKs are stored outside React. An unrelated render
       // or scoreboard update must never delay the next animation frame.
-      if(p.readIntent&&p.state){const intent=p.readIntent(p.state.t);p={...p,direction:intent.direction,coherentControls:intent.controls,confirmedInputRevision:intent.revision};}
+      if(p.readIntent&&p.state){const intent=p.readIntent(p.state.t);localControls=intent.local;p={...p,direction:intent.direction,coherentControls:intent.controls,confirmedInputRevision:intent.revision};}
       const identity = `${p.matchId}:${p.side}:${p.replay}:${p.liveEngine}:${p.bufferedSpectator}`;
       if (identity !== context) { reconciliation.reset();previousParticipant=undefined;played="";playout.reset();playerPlayout.reset();spectatorChaos.reset();trail.reset();chaosTrails.forEach(t=>t.reset());seenEffects=new Set(p.chaos?.physics.effects.map(e=>e.serial)||[]);seenHits.clear();impacts=[]; previousSound=null; context = identity; visualY = null; livePaddle.reset(); liveClock.reset(); anchorObserved=0; localDirection=p.direction; localAt=now; }
       const coherent=p.coherentControls!==undefined&&p.side>=0&&!p.replay;
@@ -190,7 +193,8 @@ export function Court({
         const localSpeed=motion?Number(p.side===0?motion.speedA:motion.speedB)/1e6:Number(rulesPaddleSpeed(p.rulesVersion??0))/1e6;
         const responsive=p.rulesVersion===17||p.rulesVersion===18;
         const motionMs=responsive?participantMotionMs(dt,p.controllable,timing.stale,s.finished):undefined;
-        participantPicture=reconciliation.sample(predictedPose,before,dt,{side:p.side as 0|1,direction:p.direction,speed:localSpeed,motionMs});
+        participantPicture=reconciliation.sample(predictedPose,before,dt,{side:p.side as 0|1,direction:p.direction,speed:localSpeed,motionMs,
+         motion:responsive&&localControls?localMotion(localControls,priorPaintAt,paintedAt,p.controllable&&!timing.stale&&!s.finished):undefined});
         if(measureControls)window.dispatchEvent(new CustomEvent('pongit:presentation-timing',{detail:{ref:p.matchId,frameAt:now,
          processedUs:String(p.state?.t),displayedUs:String(target),paddleError:participantPicture.paddles.map((y,i)=>y-predictedPose.paddles[i]),
          ballError:participantPicture.balls.map((b,i)=>({id:b.id,x:b.x-predictedPose.balls[i].x,y:b.y-predictedPose.balls[i].y}))}}));

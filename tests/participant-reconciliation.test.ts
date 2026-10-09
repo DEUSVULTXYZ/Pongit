@@ -2,11 +2,39 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {ParticipantReconciliation,participantContinuationTime,participantMotionMs,participantSourceChanged,type ParticipantPose} from '../web/lib/participant-reconciliation';
 import {projectParticipant,projectChaosParticipant} from '../web/lib/participant-projection';
-import {ParticipantInputs} from '../web/lib/participant-inputs';
+import {ParticipantInputs,localMotion} from '../web/lib/participant-inputs';
 import {initial} from '../shared/physics-v2';
 import {initialChaosEvents} from '../shared/physics-chaos-events';
 import {zeroHash} from 'viem';
 const pose=(left=288,right=288,x=512,y=288):ParticipantPose=>({paddles:[left,right],halves:[48,48],balls:[{id:1,x,y,continuity:'0:0'}]});
+
+test('short input pulses integrate event time rather than accumulating RAF rounding',()=>{
+ const inputs=new ParticipantInputs(),view=new ParticipantReconciliation();let previous=0;
+ for(let i=0;i<100;i++){
+  const direction=i%2?-1:1;inputs.localIntent(direction,5+i*130);inputs.localIntent(0,85+i*130);
+ }
+ // Exercise the bounded history on a fresh match without pruning the fixture.
+ const events=Array.from({length:100},(_,i)=>[{direction:(i%2?-1:1) as -1|1,at:5+i*130},{direction:0 as const,at:85+i*130}]).flat();
+ view.sample(pose(),undefined,0,{side:0,direction:0,speed:300,motion:[]});
+ let expected=288,largest=0;
+ for(let t=16.7;t<13200;t+=16.7){
+  const motion=localMotion(events,previous,t,true),direction=events.filter(e=>e.at<=t).at(-1)?.direction??0;
+  expected+=motion.reduce((n,p)=>n+p.direction*.3*p.ms,0);
+  const shown=view.sample(pose(expected),pose(expected),16.7,{side:0,direction,speed:300,motion});
+  largest=Math.max(largest,Math.abs(shown.paddles[0]-expected));previous=t;
+ }
+ assert(largest<1e-8);assert(Math.abs(expected-288)<1e-8);
+});
+
+test('release integrates only movement before its timestamp, then stays still',()=>{
+ const view=new ParticipantReconciliation(),events=[{direction:1 as const,at:0},{direction:0 as const,at:25}];
+ view.sample(pose(),undefined,0,{side:0,direction:1,speed:300,motion:[]});
+ assert.equal(view.sample(pose(292.8),undefined,16,{side:0,direction:1,speed:300,motion:localMotion(events,0,16,true)}).paddles[0],292.8);
+ const stopped=view.sample(pose(295.5),undefined,16,{side:0,direction:0,speed:300,motion:localMotion(events,16,32,true)});
+ assert.equal(stopped.paddles[0],295.5,'the final nine milliseconds happened before release');
+ assert.equal(view.sample(pose(295.5),undefined,16,{side:0,direction:0,speed:300,motion:localMotion(events,32,48,true)}).paddles[0],295.5);
+ assert.deepEqual(localMotion(events,32,1000,false),[],'a real pause never integrates hidden time');
+});
 
 test('public Chaos1121 confirmed contact resumes without the recorded35-unit jump',()=>{
  for(const side of [0,1]){
