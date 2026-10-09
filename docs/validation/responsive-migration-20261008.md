@@ -1735,3 +1735,17 @@ Actual COMPILED PUBLIC Classic1491 and Chaos1486 replays now pass20 checks in he
 Freshcanonical69513289/hash67290a5000305af1ac34435d4fcdd429a9f40d447b9e67f201c4ec900393f896 verifiesall11delegationsActive/epoch1/expiresAt0 andidentifiedhealthy live nodes. Eightagent runtimehashes matchmanifest; humanmanifesthasnoexpectedhash, observedcodehashes recordedseparately. Rules17agents/18humans. No redeploy/reship needed.
 
 Cleanup57b preserved sixunmountedpreviousbackup56payloads317663933bytesOFFVPS beforeeviction;archiveSHA15f1cf0a90d7f822e739dc8d2c6bc2247a74775e5b9488cca545cddf2cd3c81e. Latest57/currentimages/rollback/volumes/mountedinputs untouched. Disk80.094usable afternewbackup/image; below80cleanup required beforeanyfuturebuild. Allcutover/build/backup/probe/browser processes are finished. No new gamefixture or lifecyclewriter.1491 genuinepause remainsFAIL; providerrequesttiming awaited. Cohort56/faults56/24h helpers NOTRUN and remain blocked by failed normalseries56. AutomationconfirmedPAUSED. Fundingadequate/no transfers. No completed delivery claim.
+
+
+## October9 10:44 UTC - user Chaos1509 collision investigation; candidate58 ready
+
+User replay1509 safely retained locally:695frames,7-6 published,zero observed contract pause frames. Both multiball trajectories13.63..13.75s match the exact rules17 mirror: ball1 misses above canonical paddle309; ball2 actually hits at13.689311s/y279.21946. This cannot establish the user local picture. Actual headedChrome baseline1512 naturally finished7-6,zero pause/resync,but local rendered paddle error p95 24.15/max40.77units; peer gate fails separately. All original failed reports/videos retained. No owned browser driver remains.
+
+Product b1165bf prevents whole-frame input rounding from accumulating local movement error and fences every Chaos paddle plane, including unconfirmed misses/secondary balls. New per-ball visual crossing measurement added.1231TS/rootTS/secretcheck and Linuxweb58buildPASS; NOTDEPLOYEDyet. Backup58 complete fiveactualDBs324879030bytes/manifest9bbd0461d5bd3cf213937661142c3a78a3892a6bdf5e88551cf4d820f873da79; sole OFFVPS pull28065 still running. Localbuild33921 and remoteimport32050 completed; imagecc870883 sourceb1165bf ready. Idle-onlycutover58 prepared NOTRUN. No lifecyclewriter/reship/closure/transfer. Publicweb57 remains. AutomationPAUSED; no final24h.
+
+
+## October9 10:49 UTC - collision/input candidate58 deployed; first browser comparison active
+
+Web b1165bf/imagecc870883 deployed10:48:29.695988958Z, idle-onlycutover58PASS10:48:32 canonical69519887/hash85b0fac581496857ccd8d78e7b16fc17dc2d652bc5e9a39c63b0d2199652a395. Previous match finished normally. Sevenidle/humanSlots0/pending0 before change; intake resumed. Onlywebchanged. Backup58 sixfiles324879030bytes OFFVPSverified10:44:05.731Z manifest9bbd0461d5bd3cf213937661142c3a78a3892a6bdf5e88551cf4d820f873da79. Rollbackweb57/image08843121 plusentry58-web.previous.private.json; neveroldDB.
+
+SOLEownedbrowser32086/r2contact58-after1 running onactualproduction withvisibleChrome/independentobserver/virtualMera existingtestsession. Originalnatural7minute observation bound. Noothergame/lifecyclewriter. Candidatefull1231TS passed plus33 focusedindependenttimelinetests; hostedafter notyetproved. Newmiss-plane guard changespresentationonly, no contracts/engine/serviceupdate. AutomationPAUSED.

@@ -9,17 +9,13 @@ import {zeroHash} from 'viem';
 const pose=(left=288,right=288,x=512,y=288):ParticipantPose=>({paddles:[left,right],halves:[48,48],balls:[{id:1,x,y,continuity:'0:0'}]});
 
 test('short input pulses integrate event time rather than accumulating RAF rounding',()=>{
- const inputs=new ParticipantInputs(),view=new ParticipantReconciliation();let previous=0;
- for(let i=0;i<100;i++){
-  const direction=i%2?-1:1;inputs.localIntent(direction,5+i*130);inputs.localIntent(0,85+i*130);
- }
- // Exercise the bounded history on a fresh match without pruning the fixture.
+ const view=new ParticipantReconciliation();let previous=0;
  const events=Array.from({length:100},(_,i)=>[{direction:(i%2?-1:1) as -1|1,at:5+i*130},{direction:0 as const,at:85+i*130}]).flat();
  view.sample(pose(),undefined,0,{side:0,direction:0,speed:300,motion:[]});
  let expected=288,largest=0;
  for(let t=16.7;t<13200;t+=16.7){
   const motion=localMotion(events,previous,t,true),direction=events.filter(e=>e.at<=t).at(-1)?.direction??0;
-  expected+=motion.reduce((n,p)=>n+p.direction*.3*p.ms,0);
+  expected=288+Array.from({length:100},(_,i)=>(i%2?-1:1)*.3*Math.min(80,Math.max(0,t-(5+i*130)))).reduce((a,b)=>a+b,0);
   const shown=view.sample(pose(expected),pose(expected),16.7,{side:0,direction,speed:300,motion});
   largest=Math.max(largest,Math.abs(shown.paddles[0]-expected));previous=t;
  }

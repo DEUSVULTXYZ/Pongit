@@ -1,0 +1,267 @@
+{
+  "ref": {
+    "chainId": 10143,
+    "app": "0x776f35918da25f0b594fea72911dde5efc93e48e",
+    "epoch": "1",
+    "id": "1509"
+  },
+  "rulesVersion": 17,
+  "result": {
+    "hash": "0x28f999dd27cb0a6445e0ffec71bc6f40c178598fd88431af6d386bdbf700a69e",
+    "winner": "0xe68995b83eB4435B7f3A503E6CfBF542D2D747Cf",
+    "status": 3,
+    "scoreA": 7,
+    "scoreB": 6,
+    "elapsedUs": "92346287",
+    "finality": false
+  },
+  "frames": 695,
+  "replaySha256": "2b9481cffe4b8b6228f45258e1a0c78c0142b0daefd034d2377f6f5b93b95370",
+  "detailSha256": "d83b55aa2820e4107c7830a0e7f225db5f2e709b4340d937fe63ae1bb321fe32",
+  "contractPauseFrames": 0,
+  "multiball": {
+    "beforeUs": "13630000",
+    "afterUs": "13750000",
+    "paddleY": 309,
+    "firstBallMiss": true,
+    "secondBallContact": {
+      "sequence": 6,
+      "rally": 2,
+      "ball": 2,
+      "kind": 3,
+      "obstacle": 0,
+      "at": "13689311",
+      "x": "39999829760000",
+      "y": "279219459840000"
+    },
+    "exactMirrorMatchesBothLiveBalls": true
+  },
+  "limitation": "Authoritative replay does not retain this player's local predicted paddle. The browser baseline is a separate fixture.",
+  "browserBaseline": {
+    "ref": {
+      "app": "0x077df08FA9Ff9BBFcBA2a3C6879bCf3B21EFd3Df",
+      "epoch": "1",
+      "id": "1512"
+    },
+    "passed": false,
+    "error": "Natural-match synchronization gate failed",
+    "result": {
+      "hash": "0x922b5ad7e60ace5d17c8d7d4aaf23ca077f4f823f5b1af4267614c2d975812df",
+      "winner": "0x128638C3fFf23ebb15e66498ECcf666106a39C12",
+      "status": 3,
+      "scoreA": 7,
+      "scoreB": 6,
+      "elapsedUs": "92248766",
+      "finality": false
+    },
+    "localErrorP95": 24.149999999989063,
+    "localErrorMax": 40.769999999990915,
+    "contractPauseMs": 0,
+    "resyncs": 0,
+    "peerGate": false,
+    "reportSha256": "58f66f0ee0b82481df2daafa7cf2c43c8772a7e8f3b51b7261af85e26c5cdfb3",
+    "traceSha256": "513922480a19a63767fb42ee2847f6fc79d7017d6b42f6168da474807bd714ac",
+    "crossings": {
+      "crossings": [
+        {
+          "at": 22135.338744303685,
+          "ball": 1,
+          "side": 1,
+          "rally": "1",
+          "y": 340.00010623999975,
+          "paddle": 255.13234655533765,
+          "height": 96,
+          "split": false,
+          "penetration": -30.867759684662104,
+          "throughPaddle": false
+        },
+        {
+          "at": 40517.64470766963,
+          "ball": 1,
+          "side": 0,
+          "rally": "2",
+          "y": 156.00040981846038,
+          "paddle": 283.7865876991107,
+          "height": 96,
+          "split": false,
+          "penetration": -73.78617788065034,
+          "throughPaddle": false
+        },
+        {
+          "at": 47668.63414395578,
+          "ball": 1,
+          "side": 0,
+          "rally": "3",
+          "y": 143.99992960000046,
+          "paddle": 247.95000000000226,
+          "height": 96,
+          "split": false,
+          "penetration": -49.950070400001806,
+          "throughPaddle": false
+        },
+        {
+          "at": 54857.53380298805,
+          "ball": 1,
+          "side": 1,
+          "rally": "4",
+          "y": 432.00007039999986,
+          "paddle": 309.6409916846013,
+          "height": 96,
+          "split": false,
+          "penetration": -68.35907871539854,
+          "throughPaddle": false
+        },
+        {
+          "at": 69240.03753145364,
+          "ball": 1,
+          "side": 0,
+          "rally": "5",
+          "y": 152.92713699514198,
+          "paddle": 247.91999999998737,
+          "height": 96,
+          "split": false,
+          "penetration": -40.99286300484539,
+          "throughPaddle": false
+        },
+        {
+          "at": 71882.06824561926,
+          "ball": 1,
+          "side": 0,
+          "rally": "6",
+          "y": 52.000000000000355,
+          "paddle": 152.54999999998483,
+          "height": 96,
+          "split": false,
+          "penetration": -46.54999999998448,
+          "throughPaddle": false
+        },
+        {
+          "at": 74592.4152935224,
+          "ball": 1,
+          "side": 1,
+          "rally": "7",
+          "y": 52.000000000000156,
+          "paddle": 221.70024565216048,
+          "height": 96,
+          "split": false,
+          "penetration": -115.70024565216033,
+          "throughPaddle": false
+        },
+        {
+          "at": 77312.54296650723,
+          "ball": 1,
+          "side": 0,
+          "rally": "8",
+          "y": 523.9999999999998,
+          "paddle": 48,
+          "height": 96,
+          "split": false,
+          "penetration": -421.9999999999998,
+          "throughPaddle": false
+        },
+        {
+          "at": 80021.85854106868,
+          "ball": 1,
+          "side": 1,
+          "rally": "9",
+          "y": 523.9999999999999,
+          "paddle": 355.0866107421209,
+          "height": 96,
+          "split": false,
+          "penetration": -114.91338925787898,
+          "throughPaddle": false
+        },
+        {
+          "at": 82727.97005206274,
+          "ball": 1,
+          "side": 0,
+          "rally": "10",
+          "y": 52.000000000000234,
+          "paddle": 280.25101561882065,
+          "height": 96,
+          "split": false,
+          "penetration": -174.25101561882042,
+          "throughPaddle": false
+        },
+        {
+          "at": 85438.29477001204,
+          "ball": 1,
+          "side": 1,
+          "rally": "11",
+          "y": 524,
+          "paddle": 356.96849693559074,
+          "height": 96,
+          "split": false,
+          "penetration": -113.03150306440926,
+          "throughPaddle": false
+        },
+        {
+          "at": 92668.40729679185,
+          "ball": 1,
+          "side": 1,
+          "rally": "12",
+          "y": 432.0000703999996,
+          "paddle": 509.4549751780322,
+          "height": 96,
+          "split": false,
+          "penetration": -23.454904778032642,
+          "throughPaddle": false
+        },
+        {
+          "at": 103850.54024274068,
+          "ball": 1,
+          "side": 1,
+          "rally": "13",
+          "y": 235.99987263999998,
+          "paddle": 302.7847381574552,
+          "height": 96,
+          "split": false,
+          "penetration": -12.784865517455216,
+          "throughPaddle": false
+        }
+      ],
+      "throughPaddle": []
+    }
+  },
+  "candidate": {
+    "source": "b1165bf88299c7015ca81dbada440a80e71d0819",
+    "fullTypescriptTests": 1231,
+    "typecheck": true,
+    "deployed": true,
+    "hostedAfter": "running: r2contact58-after1"
+  },
+  "at": "2026-10-09T10:45:14.480812+00:00",
+  "cutover": {
+    "startedAt": "2026-10-09T10:45:25.090644+00:00",
+    "deadline": 1791543445.0906625,
+    "passed": true,
+    "stage": "complete",
+    "previous": "sha256:0cb0b8e44f25f83160074ce36507f621df556ce2d9a584795bd2df9f929b1258",
+    "image": "sha256:0cb0b8e44f25f83160074ce36507f621df556ce2d9a584795bd2df9f929b1258",
+    "webImage": "sha256:cc87088378dba305211b39cd3c51b9c192d746b1f3d872208119064ccd58b978",
+    "previousWeb": "sha256:0884312126d5a1b024e9b5bf5341c408a0f6dea90f5d02695f8504a2584e6c3f",
+    "backupManifest": "9bbd0461d5bd3cf213937661142c3a78a3892a6bdf5e88551cf4d820f873da79",
+    "admissionStoppedAt": "2026-10-09T10:45:25.745628+00:00",
+    "lastCheck": {
+      "block": "69519868",
+      "hash": "0x329f34e5b1f426d49250cf6b8ac24154cb31db4177d4f0260b83ffcb288ca3b5",
+      "idle": true,
+      "humanSlots": [
+        "0",
+        "0"
+      ]
+    },
+    "idle": {
+      "block": "69519887",
+      "hash": "0x85b0fac581496857ccd8d78e7b16fc17dc2d652bc5e9a39c63b0d2199652a395",
+      "idle": true,
+      "humanSlots": [
+        "0",
+        "0"
+      ]
+    },
+    "webStarted": "2026-10-09T10:48:29.695988958Z",
+    "started": "2026-10-09T04:38:38.378910132Z",
+    "finishedAt": "2026-10-09T10:48:32.414290+00:00"
+  }
+}

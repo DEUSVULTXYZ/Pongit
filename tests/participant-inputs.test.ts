@@ -6,6 +6,15 @@ import {initial} from '../shared/physics-v2';
 import {initialChaosEvents} from '../shared/physics-chaos-events';
 import {zeroHash} from 'viem';
 
+test('local intent timestamps survive receipt pruning and reset with their match',()=>{
+ const inputs=new ParticipantInputs();inputs.localIntent(1,20);inputs.localIntent(1,30);inputs.localIntent(0,100);
+ inputs.notice({id:1,direction:1,at:200,acceptedAt:10n},0n,0);inputs.controls(0,20n);
+ assert.deepEqual(inputs.localControls,[{direction:1,at:20},{direction:0,at:100}]);
+ for(let i=0;i<300;i++)inputs.localIntent(i%2?0:1,101+i);
+ assert.equal(inputs.localControls.length,128);assert.deepEqual(inputs.localControls.at(-1),{direction:0,at:400});
+ inputs.reset();assert.deepEqual(inputs.localControls,[]);
+});
+
 for(const mode of ['classic','chaos'] as const)for(const side of [0,1] as const)test(`${mode}: a new direction cannot rewrite the already displayed rally (side ${side})`,()=>{
  // Chaos 883: a 427 ms command delay left the monotonic display at 8.54s
  // while the latest live snapshot was at 8.21s. The next key was previously
