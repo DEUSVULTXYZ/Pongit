@@ -8,6 +8,7 @@ import {writerIdentity,type ScopedWriter} from '../../shared/scoped-writer';
 import {operatorNeedsFunding,operatorFundingMessage} from '../../shared/operator-funding';
 import {continuousSubmissionGuard} from '../../shared/continuous-delegation';
 import {sponsorBundles,type SponsorDispatch} from './sponsor-bundle';
+import {sponsorIntakeWindow} from './sponsor-intake-window';
 export function confirmedContractRevert(error:unknown){
  let cause:any=error;for(let i=0;cause&&i<10;i++,cause=cause.cause)if(['ExecutionRevertedError','ContractFunctionRevertedError'].includes(cause.name))return true;return false;
 }
@@ -46,6 +47,7 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
  const binding=await db.query('INSERT INTO independent_writer_binding(id,owner) VALUES(1,$1) ON CONFLICT(id) DO UPDATE SET owner=independent_writer_binding.owner RETURNING owner',[identity.owner]);
  if(binding.rows[0].owner!==identity.owner)throw Error('Sponsor queue belongs to another signer; drain and migrate it explicitly');
  const bundles=scope?.bundle?await sponsorBundles(db,scope,check):undefined;
+ const intakeWindow=bundles&&options.eager?sponsorIntakeWindow():undefined;
  const view=(r:any):ChainOperation=>({id:r.id,status:r.status,hash:r.hash??undefined,error:r.error??undefined});
  let closing=false,running=true;
  const tasks=new Set<Promise<unknown>>();
@@ -117,6 +119,15 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
  async function dispatch(){
   if(sending)return;sending=true;let c:PoolClient|undefined,locked=false;
   try{
+   if(intakeWindow?.size){
+    // Let concurrent validations finish before splitting their durable intents
+    // across transactions. Pending journal recovery is never delayed here.
+    const pending=await journal.query("SELECT id FROM il_lifecycle_jobs WHERE owner=$1 AND status='pending' LIMIT 1",[account.address.toLowerCase()]);
+    if(!pending.rowCount){
+     const queued=await db.query("SELECT created_at FROM independent_operations WHERE status='queued' ORDER BY priority,created_at LIMIT 4");
+     if(queued.rowCount&&queued.rowCount<4)await intakeWindow.join(new Date(queued.rows[0].created_at).getTime());
+    }
+   }
    c=await journal.connect();
    locked=(await c.query('SELECT pg_try_advisory_lock($1::bigint) AS ok',[identity.lock])).rows[0].ok;if(!locked)return;
    const pending=(await journal.query("SELECT * FROM il_lifecycle_jobs WHERE owner=$1 AND status='pending' ORDER BY nonce LIMIT 1",[account.address.toLowerCase()])).rows[0];
@@ -188,7 +199,7 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
  const timers=[setInterval(()=>void track(observe).catch(()=>{}),750),setInterval(()=>void track(dispatch).catch(()=>{}),1000)];
  for(const t of timers)t.unref();
  const stop=()=>{running=false;timers.forEach(clearInterval);};
- return {enqueue:(...args:Parameters<typeof enqueue>)=>track(()=>enqueue(...args)),get,account:account.address,
+ return {enqueue:(...args:Parameters<typeof enqueue>)=>track(()=>intakeWindow&&args[5]?intakeWindow.track(()=>enqueue(...args)):enqueue(...args)),get,account:account.address,
   observe:()=>track(observe),dispatch:()=>track(dispatch),status:()=>({available:!closing&&!lastError,error:lastError||undefined,code:lastCode}),stop,
   close:async()=>{closing=true;stop();await Promise.allSettled([...tasks]);}};
 }
