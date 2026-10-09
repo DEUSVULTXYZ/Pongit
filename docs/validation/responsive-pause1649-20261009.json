@@ -1,0 +1,104 @@
+{
+  "qualificationPassed": false,
+  "ref": {
+    "app": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23",
+    "epoch": "1",
+    "id": "1649"
+  },
+  "startedAt": "2026-10-09T15:18:31.396Z",
+  "finishedAt": "2026-10-09T15:20:54.348Z",
+  "naturalResult": {
+    "hash": "0xe02b78220ff5bf574facdbb0940209f3967a231be06127975f981ee7519eb51c",
+    "winner": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+    "status": 3,
+    "scoreA": 0,
+    "scoreB": 7,
+    "elapsedUs": "92248885",
+    "finality": false
+  },
+  "originalError": "Unexpected protective resume countdown",
+  "resumes": 3,
+  "playerSendP95Ms": 16.459600000001956,
+  "peerP95Ms": 13.822265625,
+  "peakPlayerCommandsPerSecond": 17,
+  "maxLocalQueueMs": 54.5,
+  "slowHeartbeats": [
+    {
+      "ms": 1447.029,
+      "sentAt": 1791559201912.7097,
+      "confirmedAt": 1791559203360.0498,
+      "basis": "browser-response-body",
+      "callbackObservedAt": 1791559203372.434,
+      "status": "0x1",
+      "action": "heartbeat",
+      "hash": "0x1f474cb15624e48296eac4d18e264005a55079b6d5cbd2f8bbafc5c32a7ddffd",
+      "block": "0x964299",
+      "gasUsed": "0xdf66b",
+      "logCount": 2
+    },
+    {
+      "ms": 1435.894,
+      "sentAt": 1791559199810.1487,
+      "confirmedAt": 1791559201246.3538,
+      "basis": "browser-response-body",
+      "callbackObservedAt": 1791559201256.3708,
+      "status": "0x1",
+      "action": "heartbeat",
+      "hash": "0x21efbb721c0aa7301b7e0992f7f1e9a06f154845882ce489d0f90cd58cab560a",
+      "block": "0x9641c6",
+      "gasUsed": "0xdf66b",
+      "logCount": 2
+    }
+  ],
+  "independentServerSlowCommands": [
+    {
+      "app": "0xcc4fbf1df9b4bf61353660c40e8f05c5135c3b23",
+      "operation": "match:1649:tick:1479:9847292:35831184046",
+      "epoch": 1,
+      "nonce": 84360,
+      "hash": "0xd43729432277b915772e91711d4f20d10c5f0976be9ec6314bb704e47807eba3",
+      "status": "observed",
+      "created_at": "2026-10-09T15:20:02.30986+00:00",
+      "updated_at": "2026-10-09T15:20:03.569246+00:00",
+      "resolution_kind": "receipt",
+      "block": "0x96427b",
+      "elapsed_ms": 1259.386
+    },
+    {
+      "app": "0xcc4fbf1df9b4bf61353660c40e8f05c5135c3b23",
+      "operation": "match:1649:tick:1514:9847615:35831184110",
+      "epoch": 1,
+      "nonce": 84376,
+      "hash": "0xeaf25a860406e8eea998641a3fbe911e2d95da48444eff9848ccdbae51f02fa0",
+      "status": "observed",
+      "created_at": "2026-10-09T15:20:05.543528+00:00",
+      "updated_at": "2026-10-09T15:20:06.089046+00:00",
+      "resolution_kind": "receipt",
+      "block": "0x964377",
+      "elapsed_ms": 545.518
+    }
+  ],
+  "concurrentHealth": {
+    "maxPendingDiffs": 13,
+    "sendGated": false,
+    "maxRoundTripMs": 780.25146484375,
+    "samples": 61
+  },
+  "collisions": {
+    "paintedCrossings": 0,
+    "unconfirmedBounces": 0
+  },
+  "sources": {
+    "artifacts/qualification/catalogue-r2multi78c4/report.json": "21a7b5eda89af11c4cf6cbd032f9de616820966b30717b87f02b3b0184a7da1a",
+    "artifacts/qualification/catalogue-r2multi78c4/sync-trace.json": "a406e374b38c121213852e5e2c82062889f4da0efd4f3ec7dd84e9235d8d6270",
+    "artifacts/responsive-20261009-match1509/pause1649-engine-metadata.json": "9f784dc11b88f1b0773627a78c3bec2880862900358b4a77e5698b24256845e1"
+  },
+  "conclusion": "Actual headed Edge game naturally finished0-7. A Windows heartbeat waited1447ms while an independent VPS engine command to the same hosted arena took1259ms in the same interval. The local command queue and observed pending slots/rate do not explain the shared delay. Protective pauses remain real failures; no increase to the500ms presence limit and no acceptance waiver.",
+  "limit": "Request and response observations locate a shared live-path delay, but cannot establish the internal cause within Fly or the hosted node. No change to provider settings, delegation or gameplay was performed.",
+  "providerTrace": {
+    "node": "il2-eu-cc4fbf1df9b4bf61.fly.dev",
+    "window": "2026-10-09T15:19:57Z..2026-10-09T15:20:06Z",
+    "heartbeatHash": "0x1f474cb15624e48296eac4d18e264005a55079b6d5cbd2f8bbafc5c32a7ddffd",
+    "engineHash": "0xd43729432277b915772e91711d4f20d10c5f0976be9ec6314bb704e47807eba3"
+  }
+}

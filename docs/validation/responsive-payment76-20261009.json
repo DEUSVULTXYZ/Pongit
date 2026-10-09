@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-09T15:07:29.906Z",
+  "passed": true,
+  "player": "0x67f54B0d51833281BCC4377217302478A5bE5861",
+  "id": "680564733841876926926749214863536423060",
+  "market": "0x0b0E59C4F71F4c716282E7A7A3ab9AabD87a5aab",
+  "amount": "6000000000000000",
+  "refunded": "0",
+  "canonicalPreClaimAmount": "6000000000000000",
+  "transaction": "0xf535257ae0c134361c55394a91efb7cedbac2e9e166d4bd8da5c4f30c64ac2c8",
+  "block": "69569842",
+  "before": "0",
+  "after": "6000000000000000",
+  "attempts": 1,
+  "duplicateClaimRejected": true,
+  "duplicateRetryRejected": true
+}

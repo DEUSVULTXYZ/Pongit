@@ -1,0 +1,820 @@
+{
+  "source": "55c2c4071b3de087c1211d6abf8f748709f6a426",
+  "passed": false,
+  "ref": {
+    "app": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23",
+    "epoch": "1",
+    "id": "1641"
+  },
+  "error": "Release drift exceeds limits",
+  "naturalEnded": true,
+  "performance": {
+    "admission": true,
+    "localInput": true,
+    "confirmedInput": true,
+    "player": true,
+    "spectator": true
+  },
+  "naturalGates": {
+    "noPause": true,
+    "noResume": true,
+    "noResync": true,
+    "peer": true,
+    "player": true,
+    "spectator": true,
+    "executionClock": true
+  },
+  "reportSha256": "ac34973114582d35d69261f0052f438347eef2fbf6258aa23b9340d6700c4ac0",
+  "traceSha256": "56c66666e966a63da1eb75d0054760dc68f958ba8d79efc64a2bf3485eedca65",
+  "release": {
+    "at": 52642,
+    "releaseY": 463.5599999427794,
+    "contactHeld": false,
+    "drift": 6.43996805722054,
+    "includingFrameTail": 3.3900000572204476
+  },
+  "poses": [
+    {
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "at": 52630.699999809265,
+      "rules": 17,
+      "side": 0,
+      "balls": [
+        {
+          "id": 1,
+          "x": 46.67847646228299,
+          "y": 520.6607617688586
+        }
+      ],
+      "paddles": [
+        466.9499999999999,
+        317.9999999999748
+      ],
+      "rally": "8",
+      "score": [
+        3,
+        4
+      ],
+      "sourceUs": "42720000",
+      "renderedUs": "42739699",
+      "contactBoundary": false,
+      "sourceVelocity": {
+        "vx": "-192000000",
+        "x": "50489024",
+        "score": [
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "at": 52642.09999990463,
+      "rules": 17,
+      "side": 0,
+      "balls": [
+        {
+          "id": 1,
+          "x": 44.50098208157329,
+          "y": 521.7495089592134
+        }
+      ],
+      "paddles": [
+        463.5599999427794,
+        317.99999999997755
+      ],
+      "rally": "8",
+      "score": [
+        3,
+        4
+      ],
+      "sourceUs": "42720000",
+      "renderedUs": "42751099",
+      "contactBoundary": false,
+      "sourceVelocity": {
+        "vx": "-192000000",
+        "x": "50489024",
+        "score": [
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "at": 52647.299999952316,
+      "rules": 17,
+      "side": 0,
+      "balls": [
+        {
+          "id": 1,
+          "x": 43.50701866239172,
+          "y": 522.2464906688041
+        }
+      ],
+      "paddles": [
+        463.5599999427794,
+        317.9999999999787
+      ],
+      "rally": "8",
+      "score": [
+        3,
+        4
+      ],
+      "sourceUs": "42720000",
+      "renderedUs": "42756299",
+      "contactBoundary": false,
+      "sourceVelocity": {
+        "vx": "-192000000",
+        "x": "50489024",
+        "score": [
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "at": 52664.09999990463,
+      "rules": 17,
+      "side": 0,
+      "balls": [
+        {
+          "id": 1,
+          "x": 40.88284169827291,
+          "y": 523.5585791508635
+        }
+      ],
+      "paddles": [
+        465.0599999427794,
+        317.999999999982
+      ],
+      "rally": "8",
+      "score": [
+        3,
+        4
+      ],
+      "sourceUs": "42760000",
+      "renderedUs": "42770000",
+      "contactBoundary": false,
+      "sourceVelocity": {
+        "vx": "-192000000",
+        "x": "42809024",
+        "score": [
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "at": 52680.5,
+      "rules": 17,
+      "side": 0,
+      "balls": [
+        {
+          "id": 1,
+          "x": 40.00006362226051,
+          "y": 523.9999681888697
+        }
+      ],
+      "paddles": [
+        469.99996799999997,
+        317.9999999999847
+      ],
+      "rally": "8",
+      "score": [
+        3,
+        4
+      ],
+      "sourceUs": "42760000",
+      "renderedUs": "42774630",
+      "contactBoundary": true,
+      "sourceVelocity": {
+        "vx": "-192000000",
+        "x": "42809024",
+        "score": [
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "at": 52697.39999985695,
+      "rules": 17,
+      "side": 0,
+      "balls": [
+        {
+          "id": 1,
+          "x": 40.00006368099564,
+          "y": 523.9999681595021
+        }
+      ],
+      "paddles": [
+        469.99996799999997,
+        317.9999999999871
+      ],
+      "rally": "8",
+      "score": [
+        3,
+        4
+      ],
+      "sourceUs": "42760000",
+      "renderedUs": "42774630",
+      "contactBoundary": true,
+      "sourceVelocity": {
+        "vx": "-192000000",
+        "x": "42809024",
+        "score": [
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "at": 52714.5,
+      "rules": 17,
+      "side": 0,
+      "balls": [
+        {
+          "id": 1,
+          "x": 40.000063731136244,
+          "y": 523.9999681344318
+        }
+      ],
+      "paddles": [
+        469.99996799999997,
+        317.99999999998914
+      ],
+      "rally": "8",
+      "score": [
+        3,
+        4
+      ],
+      "sourceUs": "42760000",
+      "renderedUs": "42774630",
+      "contactBoundary": true,
+      "sourceVelocity": {
+        "vx": "-192000000",
+        "x": "42809024",
+        "score": [
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "at": 52730.799999952316,
+      "rules": 17,
+      "side": 0,
+      "balls": [
+        {
+          "id": 1,
+          "x": 41.23880919999757,
+          "y": 525.0874163052582
+        }
+      ],
+      "paddles": [
+        469.99996799999997,
+        319.66953780409204
+      ],
+      "rally": "8",
+      "score": [
+        3,
+        4
+      ],
+      "sourceUs": "42820000",
+      "renderedUs": "42837000",
+      "contactBoundary": false,
+      "sourceVelocity": {
+        "vx": "211200000",
+        "x": "49581804",
+        "score": [
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "at": 52747.299999952316,
+      "rules": 17,
+      "side": 0,
+      "balls": [
+        {
+          "id": 1,
+          "x": 46.52187913468719,
+          "y": 527.6584448360194
+        }
+      ],
+      "paddles": [
+        469.99996799999997,
+        326.05397047745055
+      ],
+      "rally": "8",
+      "score": [
+        3,
+        4
+      ],
+      "sourceUs": "42820000",
+      "renderedUs": "42853500",
+      "contactBoundary": false,
+      "sourceVelocity": {
+        "vx": "211200000",
+        "x": "49581804",
+        "score": [
+          3,
+          4
+        ]
+      }
+    }
+  ],
+  "timings": [
+    {
+      "stage": "queue",
+      "startedAt": 52427.199999809265,
+      "ms": 0.6000001430511475,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "fence",
+      "startedAt": 52427.799999952316,
+      "ms": 0,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "fence",
+      "startedAt": 52427.89999985695,
+      "ms": 0,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "signature",
+      "command": "input",
+      "startedAt": 52427.89999985695,
+      "ms": 0.40000009536743164,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "transport",
+      "command": "input",
+      "startedAt": 52428.299999952316,
+      "ms": 29.700000047683716,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "send",
+      "startedAt": 52427.89999985695,
+      "ms": 30.200000047683716,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "acknowledged",
+      "command": "input",
+      "hash": "0x61291a0815a4bd465cbb092c31d2b3dd0f991bfd79691c7c9dbe4e0a651201cb",
+      "startedAt": 52428.09999990463,
+      "ms": 30,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "receipt",
+      "startedAt": 52458.5,
+      "ms": 0.6999998092651367,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "queue",
+      "startedAt": 52498.09999990463,
+      "ms": 0,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "fence",
+      "startedAt": 52498.09999990463,
+      "ms": 0,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "fence",
+      "startedAt": 52498.09999990463,
+      "ms": 0.09999990463256836,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "signature",
+      "command": "heartbeat",
+      "startedAt": 52498.299999952316,
+      "ms": 0.2999999523162842,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "transport",
+      "command": "heartbeat",
+      "startedAt": 52498.699999809265,
+      "ms": 9,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "send",
+      "startedAt": 52498.199999809265,
+      "ms": 9.600000143051147,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "acknowledged",
+      "command": "heartbeat",
+      "hash": "0x7ac16b002037671d102bf7d2e8a77aea3bff2a3cc15b124a907db79dd9c2df3a",
+      "startedAt": 52498.799999952316,
+      "ms": 9,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "receipt",
+      "startedAt": 52507.799999952316,
+      "ms": 0.7999999523162842,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "queue",
+      "startedAt": 52597.89999985695,
+      "ms": 0,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "fence",
+      "startedAt": 52597.89999985695,
+      "ms": 0,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "fence",
+      "startedAt": 52598,
+      "ms": 0,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "signature",
+      "command": "heartbeat",
+      "startedAt": 52598.09999990463,
+      "ms": 0.2999999523162842,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "transport",
+      "command": "heartbeat",
+      "startedAt": 52598.5,
+      "ms": 13,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "send",
+      "startedAt": 52598,
+      "ms": 13.5,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "acknowledged",
+      "command": "heartbeat",
+      "hash": "0x3b4c729342688c56051ee730e1702132bce54382658ad4aab4af96745de9c32d",
+      "startedAt": 52597.5,
+      "ms": 14,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "receipt",
+      "startedAt": 52611.5,
+      "ms": 0.5,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "queue",
+      "startedAt": 52642.09999990463,
+      "ms": 0.40000009536743164,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "fence",
+      "startedAt": 52642.5,
+      "ms": 0,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "fence",
+      "startedAt": 52642.5,
+      "ms": 0,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "signature",
+      "command": "input",
+      "startedAt": 52642.59999990463,
+      "ms": 0.20000004768371582,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "transport",
+      "command": "input",
+      "startedAt": 52642.799999952316,
+      "ms": 11,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "send",
+      "startedAt": 52642.5,
+      "ms": 11.299999952316284,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "acknowledged",
+      "command": "input",
+      "hash": "0xcf719e959b127c3243138535b76fa3ed5d5dd9fdfcee6871e11827ba5cf86d8d",
+      "startedAt": 52642.799999952316,
+      "ms": 11,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    },
+    {
+      "stage": "receipt",
+      "startedAt": 52654.199999809265,
+      "ms": 0.40000009536743164,
+      "ref": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23:1:1641",
+      "timeOrigin": 1791558430813.9
+    }
+  ],
+  "receipts": [
+    {
+      "ms": 11.327299999997194,
+      "sentAt": 1791558483014.5527,
+      "confirmedAt": 1791558483025.9019,
+      "status": "0x1",
+      "action": "heartbeat",
+      "hash": "0xf54dce1602a828e0c849cbf0f0929abf55f1b6d7ab7b65be4942fb432adba0c2",
+      "block": "0x952978",
+      "gasUsed": "0x135ab8",
+      "logCount": 2
+    },
+    {
+      "ms": 11.592099999994389,
+      "sentAt": 1791558483105.0476,
+      "confirmedAt": 1791558483116.668,
+      "status": "0x1",
+      "action": "input",
+      "hash": "0x9246c060a60346daccb2be7b1e5481485a8a3e210e20db706eeb627d33c83b4d",
+      "block": "0x952981",
+      "gasUsed": "0x139ced",
+      "logCount": 3,
+      "side": 0,
+      "direction": 1,
+      "sequence": "187"
+    },
+    {
+      "ms": 7.938300000001618,
+      "sentAt": 1791558483193.416,
+      "confirmedAt": 1791558483201.3792,
+      "status": "0x1",
+      "action": "input",
+      "hash": "0x13554fa1353114b2fe6364e28387494487431b98b48a530aa407f0fe2f2c529f",
+      "block": "0x95298a",
+      "gasUsed": "0xe2ef9",
+      "logCount": 3,
+      "side": 0,
+      "direction": 0,
+      "sequence": "188"
+    },
+    {
+      "ms": 27.503600000003644,
+      "sentAt": 1791558483245.6416,
+      "confirmedAt": 1791558483273.1584,
+      "status": "0x1",
+      "action": "input",
+      "hash": "0x61291a0815a4bd465cbb092c31d2b3dd0f991bfd79691c7c9dbe4e0a651201cb",
+      "block": "0x952991",
+      "gasUsed": "0xef0c5",
+      "logCount": 3,
+      "side": 0,
+      "direction": -1,
+      "sequence": "189"
+    },
+    {
+      "ms": 7.6428000000014435,
+      "sentAt": 1791558483314.9153,
+      "confirmedAt": 1791558483322.583,
+      "status": "0x1",
+      "action": "heartbeat",
+      "hash": "0x7ac16b002037671d102bf7d2e8a77aea3bff2a3cc15b124a907db79dd9c2df3a",
+      "block": "0x952996",
+      "gasUsed": "0xea1e8",
+      "logCount": 2
+    },
+    {
+      "ms": 10.6079000000027,
+      "sentAt": 1791558483415.3176,
+      "confirmedAt": 1791558483425.9512,
+      "status": "0x1",
+      "action": "heartbeat",
+      "hash": "0x3b4c729342688c56051ee730e1702132bce54382658ad4aab4af96745de9c32d",
+      "block": "0x9529a0",
+      "gasUsed": "0xde13b",
+      "logCount": 2
+    },
+    {
+      "ms": 12.169099999999162,
+      "sentAt": 1791558483458.6465,
+      "confirmedAt": 1791558483470.8298,
+      "status": "0x1",
+      "action": "input",
+      "hash": "0xcf719e959b127c3243138535b76fa3ed5d5dd9fdfcee6871e11827ba5cf86d8d",
+      "block": "0x9529a4",
+      "gasUsed": "0xe2eb3",
+      "logCount": 3,
+      "side": 0,
+      "direction": 0,
+      "sequence": "190"
+    }
+  ],
+  "health": [
+    {
+      "at": 1791558483167.9944,
+      "receivedAt": 1791558483175.8835,
+      "block": 9775455,
+      "timestamp": 1791558482,
+      "batches": 1305,
+      "pendingDiffs": 11,
+      "ok": true,
+      "sendGated": false,
+      "clock": {
+        "ageMs": 714,
+        "lagMs": 1616,
+        "fenced": false,
+        "failures": 20,
+        "refreshes": 97972,
+        "readMs": {
+          "max": 273,
+          "p50": 11,
+          "p99": 35
+        }
+      },
+      "lock": {
+        "parked": 0,
+        "calls": {
+          "count": 11151,
+          "holdsOver100ms": 0,
+          "maxHoldAgoMs": 97972892,
+          "maxHoldMs": 56.266387,
+          "maxWaitMs": 31.958,
+          "meanWaitMs": 0.006475024661465339,
+          "slow": 3
+        },
+        "sends": {
+          "count": 98912,
+          "holdsOver100ms": 5,
+          "maxHoldAgoMs": 90810985,
+          "maxHoldMs": 404.430456,
+          "maxWaitMs": 8.501,
+          "meanWaitMs": 0.001197205596894209,
+          "slow": 0
+        },
+        "holds": {
+          "count": 10237774,
+          "holdsOver100ms": 5,
+          "maxHoldAgoMs": 90810985,
+          "maxHoldMs": 404.430456
+        }
+      }
+    },
+    {
+      "at": 1791558483272.3062,
+      "receivedAt": 1791558483289.2893,
+      "block": 9775455,
+      "timestamp": 1791558482,
+      "batches": 1305,
+      "pendingDiffs": 11,
+      "ok": true,
+      "sendGated": false,
+      "clock": {
+        "ageMs": 827,
+        "lagMs": 1729,
+        "fenced": false,
+        "failures": 20,
+        "refreshes": 97972,
+        "readMs": {
+          "max": 273,
+          "p50": 11,
+          "p99": 35
+        }
+      },
+      "lock": {
+        "parked": 0,
+        "calls": {
+          "count": 11151,
+          "holdsOver100ms": 0,
+          "maxHoldAgoMs": 97973005,
+          "maxHoldMs": 56.266387,
+          "maxWaitMs": 31.958,
+          "meanWaitMs": 0.006475024661465339,
+          "slow": 3
+        },
+        "sends": {
+          "count": 98915,
+          "holdsOver100ms": 5,
+          "maxHoldAgoMs": 90811098,
+          "maxHoldMs": 404.430456,
+          "maxWaitMs": 8.501,
+          "meanWaitMs": 0.0011971692867613608,
+          "slow": 0
+        },
+        "holds": {
+          "count": 10237794,
+          "holdsOver100ms": 5,
+          "maxHoldAgoMs": 90811098,
+          "maxHoldMs": 404.430456
+        }
+      }
+    },
+    {
+      "at": 1791558483379.9253,
+      "receivedAt": 1791558483386.8452,
+      "block": 9775455,
+      "timestamp": 1791558482,
+      "batches": 1305,
+      "pendingDiffs": 11,
+      "ok": true,
+      "sendGated": false,
+      "clock": {
+        "ageMs": 925,
+        "lagMs": 1827,
+        "fenced": false,
+        "failures": 20,
+        "refreshes": 97972,
+        "readMs": {
+          "max": 273,
+          "p50": 11,
+          "p99": 35
+        }
+      },
+      "lock": {
+        "parked": 0,
+        "calls": {
+          "count": 11151,
+          "holdsOver100ms": 0,
+          "maxHoldAgoMs": 97973103,
+          "maxHoldMs": 56.266387,
+          "maxWaitMs": 31.958,
+          "meanWaitMs": 0.006475024661465339,
+          "slow": 3
+        },
+        "sends": {
+          "count": 98917,
+          "holdsOver100ms": 5,
+          "maxHoldAgoMs": 90811196,
+          "maxHoldMs": 404.430456,
+          "maxWaitMs": 8.501,
+          "meanWaitMs": 0.001197145081229718,
+          "slow": 0
+        },
+        "holds": {
+          "count": 10237810,
+          "holdsOver100ms": 5,
+          "maxHoldAgoMs": 90811196,
+          "maxHoldMs": 404.430456
+        }
+      }
+    }
+  ],
+  "unconfirmedBounces": [],
+  "throughPaddle": [],
+  "conclusion": "Natural Chaos1641 has no pause, resync, paddle crossing or unconfirmed bounce. One released local paddle at463.56 was raised to470.000064 by a real contact constraint, a6.439968-unit change. The canonical paddle stopped at471 and the confirmed hit was at524.000064. The initial press used30ms send latency, with<1ms local queue, while release used11ms. The contact geometry correction avoids a visual miss but exceeds the approved six-unit maximum. This unresolved tradeoff is not declared fixed and its acceptance threshold is unchanged."
+}

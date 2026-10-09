@@ -1,0 +1,42 @@
+{
+  "startedAt": "2026-10-09T15:28:37.320Z",
+  "ref": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e/1/1509",
+  "readOnly": true,
+  "passed": true,
+  "checks": [
+    {
+      "channel": "chrome",
+      "width": 1440,
+      "canvas": {
+        "x": 76.13750457763672,
+        "y": 159.6750030517578,
+        "width": 1143.7250442504883,
+        "height": 642.6374969482422
+      },
+      "multiballPaints": 64,
+      "authoritativePositionsMatch": true,
+      "firstMissSecondReturn": true,
+      "writes": 0,
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\replay1509-web69-attempt2\\chrome-video\\page@386bcfe3bea8ae77699005be942a8f04.webm"
+    },
+    {
+      "channel": "msedge",
+      "width": 390,
+      "canvas": {
+        "x": 40.79999923706055,
+        "y": 397.70001220703125,
+        "width": 308.8000068664551,
+        "height": 173
+      },
+      "multiballPaints": 65,
+      "authoritativePositionsMatch": true,
+      "firstMissSecondReturn": true,
+      "writes": 0,
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\replay1509-web69-attempt2\\msedge-video\\page@325a21efc1b04532ad05c2e8c0c38ec7.webm"
+    }
+  ],
+  "limitation": "Recorded authoritative playback only. Not original local prediction, live multiball qualification, or physical mobile evidence.",
+  "replaySha256": "e610412e03cd154e38a569f0cb4c9f1db73140d99c274f4e91d16196622de262",
+  "frameCount": 695,
+  "finishedAt": "2026-10-09T15:28:55.442Z"
+}
