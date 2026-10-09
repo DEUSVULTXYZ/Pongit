@@ -1403,3 +1403,10 @@ Definite reader defect: HTTP and SSE used separate entry caches; notifications r
 Backup40 includes the reserve transfer:5DB/runtime6files79897992bytes, SHAverifiedOFFVPS00:54:09,manifestf9f0c652bf68b79ad2e95d821a975c95c623ec0d69eeeb1e753e0f271b91808e. Only6oldbackup36payloads79641704bytes removed remotely after fresh localSHA and all-container mount checks; all bytes remainOFFVPS. Current39/40/manifests/images/volumes preserved. Build68485/backup87600/pull5419/tests5324/typecheck20706/37168 finishedPASS.
 
 Sole readercutover40 exec26036 started00:55:08, original01:07:08 bound, awaiting7idle/pending0. Publicreader remains57ff565 untilPASS; web e58531d unchanged. No lifecycle writer. Naturalseries40 preparedNOTRUN,2Classic then5Chaos, original80minute bound when launched. AutomationPAUSED; no24h started or completed delivery.
+
+
+## October9 01:00 UTC - shared reader deployed; natural browser series40
+
+Readeraa7e0e1/image3cb5ca03d5fd3f58723c3e33c045eb06e6e9b91459df3df3354343e1163a60a9 deployed00:59:15.49534887Z after canonical69404029/hashc473bf7917b1f11654fe3651a9a5af12b9a7d21e5f564e557e46cd872919afb5 confirmed all7idle, humanslots0, pending0. Cutover26036 finishedPASS00:59:22. Onlyreaderchanged; publicwebe585/RPCd91/humanf56/enginefd/scopedjournals unchanged. Rollbackreader5c035/confignotifications40 previousruntime; neveroldDB. All11actualnodeidentities and canonical continuousdelegations were rechecked at69403670.
+
+Sole browser/gamecoordinator series40 exec46174 started aftercutover, original80minutebound.2Classicthen5Chaos, publiccatalogue,Chrome/Edge/5widths, independentobserver/nativeclockreceipts. Earlier39FAIL andseven11preadmissionFAIL unchanged. No otherdriver/build/lifecycle; automationPAUSED/no24h or deliveryclaim. Backup40OFFVPSverified.
