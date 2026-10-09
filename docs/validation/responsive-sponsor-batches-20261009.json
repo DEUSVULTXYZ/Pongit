@@ -1,0 +1,36 @@
+{
+  "source": "a4f12ec00f3064a4304d2474ccca50d0c7f0ea1d",
+  "parent": "sha256:69b669777a277f495b950ee467175f630c434a896e574d376c7b43e16114473b",
+  "files": {
+    "relayer/src/independent-writer.ts": "fcd7b3e8b1cd4bfb8b3c8d5a6f23b7ac64cbcbc66f6b006bb037441c11d764d3",
+    "relayer/src/sponsor-intake-window.ts": "a4b5b3f1728a1fdd21764277ef4eb1f697270523a0f4f76ad0ae9145cccc8768",
+    "tests/sponsor-intake-window.test.ts": "1e0d1648616f55b8c8d7f61d7032d798535dcb6dce8b9cab12257aa739fd0e61",
+    "scripts/sponsor-intake-pg-check.ts": "2afffbddfa5efb3bfb48763600a70f97ac8c61533f437538e0f57ba89c977913"
+  },
+  "startedAt": "2026-10-09T07:57:40.288014+00:00",
+  "diskBefore": 79.8634098248312,
+  "passed": true,
+  "image": "sha256:8946aa6431eb820131a76be5fa3021a0dfe47e6de956f6ee18ed399d4d7e7e8f",
+  "baseline": {
+    "expectedRegressionFailure": true
+  },
+  "postgres": {
+    "passed": true,
+    "kind": "isolated PostgreSQL and deterministic chain transport",
+    "intents": 12,
+    "nonces": 3,
+    "groups": 3,
+    "concurrentIntakeDelaysMs": [
+      20,
+      220,
+      420,
+      620
+    ],
+    "crossDatabaseCrash": true,
+    "identicalResend": true,
+    "unsigned429": true,
+    "restart": true,
+    "productionTransactions": 0
+  },
+  "finishedAt": "2026-10-09T07:59:41.242669+00:00"
+}
