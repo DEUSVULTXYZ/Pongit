@@ -1838,3 +1838,9 @@ Series62 exitedFAIL12:00:52 after third1550. First1548/1549PASS. Mobile1550 natu
 
 
 2026-10-09T12:30:02.079849+00:00 - series65 completedfirst1559FAIL natural7-4, zero pauses/resync/jumps/crossings/fakebounces, maxhold66.6ms, releasep952.03000004/max5.79. Actual .1-.2ms input dispatch plus full2unit correction exceeded2unit target; candidate64 reserves .5unit (1.5correctionbudget). Separate priorcontacthold measure extrapolated5.79units despite stationarypaint; regression now keeps its actual zero velocity and checks every laterpaint. OriginalFAIL retained. No driver active; publicweb63 unchanged.
+
+
+2026-10-09T12:33:05.877209+00:00 - candidate45a22e4 published,1245TS/rootTS/secretPASS. SolelocalLinuxbuild64 exec16295 running, no browserdriver. Freshbackup63 remains verified12:16; cutover64 retains30min freshness guard. Scopedduplicateweb63 upload and unusedweb58/59 images offloaded only after exactarchiveSHA/OCIblob/sourcechecks plus allcontainerreferences; current63/rollback60..62/volumes retained. Disk79.7816 beforebuild. Olderfailedseries65/64/63 unchanged.
+
+
+2026-10-09T12:34:24.247785+00:00 - web64/45a22e4 built and SHAimported image74863e4c8066c0fd0c81c94fc708088b21582961e3e50735644cc5c062df83f3. Soleguardedcutover exec83668 running; backup63stillfresh12:16 verifiedOFFVPS. No game driver. Preparedseries66 exactimageguard,5Chaos/2Classic onsameoriginal80minboundwhenstarted, restoresvalidfresh12:24virtualfamily from65c1. Original65/64 failures preserved.
